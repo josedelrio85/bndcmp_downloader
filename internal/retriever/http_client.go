@@ -1,4 +1,4 @@
-package retriever_http_client
+package retriever
 
 import (
 	"io"
