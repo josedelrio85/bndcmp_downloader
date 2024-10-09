@@ -5,6 +5,7 @@ import (
 
 	"github.com/josedelrio85/bndcmp_downloader/internal/retriever_http_client"
 	"github.com/josedelrio85/bndcmp_downloader/internal/scrapper"
+	"github.com/josedelrio85/bndcmp_downloader/parser"
 )
 
 func main() {
@@ -12,7 +13,8 @@ func main() {
 	trackURL := "https://kinggizzard.bandcamp.com/track/elbow"
 
 	httpClient := retriever_http_client.NewHttpClient()
-	trackScrapper := scrapper.NewTrackScrapper(trackURL, httpClient)
+	parseClient := parser.NewParseClient()
+	trackScrapper := scrapper.NewTrackScrapper(trackURL, httpClient, parseClient)
 	if err := trackScrapper.Execute(); err != nil {
 		fmt.Println("execute ", err)
 		panic(err)
