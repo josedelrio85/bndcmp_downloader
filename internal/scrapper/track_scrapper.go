@@ -12,16 +12,18 @@ import (
 )
 
 type TrackScrapper struct {
-	URL        string
-	Track      *model.Track
-	httpClient Retriever
+	URL         string
+	Track       *model.Track
+	httpClient  Retriever
+	parseClient Parser
 }
 
-func NewTrackScrapper(URL string, httpClient Retriever) *TrackScrapper {
+func NewTrackScrapper(URL string, httpClient Retriever, parseClient Parser) *TrackScrapper {
 	return &TrackScrapper{
-		URL:        URL,
-		Track:      &model.Track{},
-		httpClient: httpClient,
+		URL:         URL,
+		Track:       &model.Track{},
+		httpClient:  httpClient,
+		parseClient: parseClient,
 	}
 }
 
@@ -30,15 +32,7 @@ func (t *TrackScrapper) Retrieve(url string) (io.Reader, error) {
 }
 
 func (t *TrackScrapper) Parse(data io.Reader) (*html.Node, error) {
-	return parse(data)
-}
-
-func parse(data io.Reader) (*html.Node, error) {
-	node, err := html.Parse(data)
-	if err != nil {
-		return nil, err
-	}
-	return node, nil
+	return t.parseClient.Parse(data)
 }
 
 func (t *TrackScrapper) Find(node *html.Node) error {
