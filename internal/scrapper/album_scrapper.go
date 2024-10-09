@@ -9,14 +9,16 @@ import (
 )
 
 type AlbumScrapper struct {
-	TrackList  []string
-	httpClient Retriever
+	TrackList   []string
+	httpClient  Retriever
+	parseClient Parser
 }
 
-func NewAlbumScrapper(httpClient Retriever) *AlbumScrapper {
+func NewAlbumScrapper(httpClient Retriever, parseClient Parser) *AlbumScrapper {
 	return &AlbumScrapper{
-		TrackList:  []string{},
-		httpClient: httpClient,
+		TrackList:   []string{},
+		httpClient:  httpClient,
+		parseClient: parseClient,
 	}
 }
 
@@ -25,7 +27,7 @@ func (a *AlbumScrapper) Retrieve(url string) (io.Reader, error) {
 }
 
 func (a *AlbumScrapper) Parse(data io.Reader) (*html.Node, error) {
-	return parse(data)
+	return a.parseClient.Parse(data)
 }
 
 func (a *AlbumScrapper) Find(node *html.Node) error {
