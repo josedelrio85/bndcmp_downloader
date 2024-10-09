@@ -2,8 +2,8 @@ package scrapper
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
-	"net/http"
 	"os"
 
 	"github.com/josedelrio85/bndcmp_downloader/internal/bandcamp"
@@ -12,25 +12,21 @@ import (
 )
 
 type TrackScrapper struct {
-	Track *model.Track
+	URL        string
+	Track      *model.Track
+	httpClient Retriever
 }
 
-func NewTrackScrapper() *TrackScrapper {
+func NewTrackScrapper(URL string, httpClient Retriever) *TrackScrapper {
 	return &TrackScrapper{
-		Track: &model.Track{},
+		URL:        URL,
+		Track:      &model.Track{},
+		httpClient: httpClient,
 	}
 }
 
 func (t *TrackScrapper) Retrieve(url string) (io.Reader, error) {
-	return retrieve(url)
-}
-
-func retrieve(url string) (io.Reader, error) {
-	response, err := http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	return response.Body, nil
+	return t.httpClient.Retrieve(url)
 }
 
 func (t *TrackScrapper) Parse(data io.Reader) (*html.Node, error) {
@@ -86,6 +82,46 @@ func save(data io.Reader, filename string, folder *string) error {
 	_, err = io.Copy(newFile, data)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (t *TrackScrapper) Execute() error {
+	fmt.Println("starting track scrapper for url: ", t.URL)
+	reader, err := t.Retrieve(t.URL)
+	if err != nil {
+		fmt.Println("get ", err)
+		panic(err)
+	}
+
+	node, err := t.Parse(reader)
+	if err != nil {
+		fmt.Println("parse ", err)
+		panic(err)
+	}
+
+	err = t.Find(node)
+	if err != nil {
+		fmt.Println("find ", err)
+		panic(err)
+	}
+
+	if t.Track != nil {
+		fmt.Println("processing download for track: ", t.Track.Title)
+		if t.Track.DownloadURL != "" {
+			mp3_reader, err := t.Retrieve(t.Track.DownloadURL)
+			if err != nil {
+				fmt.Println("mp3 get ", err)
+				panic(err)
+			}
+
+			trackTitle := t.Track.Title + ".mp3"
+			if err := t.Save(mp3_reader, trackTitle, nil); err != nil {
+				fmt.Println("save ", err)
+				panic(err)
+			}
+		}
 	}
 
 	return nil
