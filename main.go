@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
+	"github.com/josedelrio85/bndcmp_downloader/internal/parser"
 	"github.com/josedelrio85/bndcmp_downloader/internal/retriever_http_client"
 	"github.com/josedelrio85/bndcmp_downloader/internal/scrapper"
-	"github.com/josedelrio85/bndcmp_downloader/parser"
 )
 
 func main() {
