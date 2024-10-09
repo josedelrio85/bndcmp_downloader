@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/josedelrio85/bndcmp_downloader/internal/bandcamp"
 	"github.com/josedelrio85/bndcmp_downloader/internal/model"
@@ -16,14 +15,16 @@ type TrackScrapper struct {
 	Track       *model.Track
 	httpClient  Retriever
 	parseClient Parser
+	saveClient  Saver
 }
 
-func NewTrackScrapper(URL string, httpClient Retriever, parseClient Parser) *TrackScrapper {
+func NewTrackScrapper(URL string, httpClient Retriever, parseClient Parser, saveClient Saver) *TrackScrapper {
 	return &TrackScrapper{
 		URL:         URL,
 		Track:       &model.Track{},
 		httpClient:  httpClient,
 		parseClient: parseClient,
+		saveClient:  saveClient,
 	}
 }
 
@@ -57,28 +58,8 @@ func (t *TrackScrapper) Find(node *html.Node) error {
 	return nil
 }
 
-func (t *TrackScrapper) Save(data io.Reader, filename string, folder *string) error {
-	return save(data, filename, folder)
-}
-
-func save(data io.Reader, filename string, folder *string) error {
-	folderPath := "downloads"
-	if folder != nil {
-		folderPath = *folder
-	}
-
-	newFile, err := os.Create(folderPath + "/" + filename)
-	if err != nil {
-		return err
-	}
-	defer newFile.Close()
-
-	_, err = io.Copy(newFile, data)
-	if err != nil {
-		return err
-	}
-
-	return nil
+func (t *TrackScrapper) Save(data io.Reader, filename string) error {
+	return t.saveClient.Save(data, filename)
 }
 
 func (t *TrackScrapper) Execute() error {
@@ -86,19 +67,19 @@ func (t *TrackScrapper) Execute() error {
 	reader, err := t.Retrieve(t.URL)
 	if err != nil {
 		fmt.Println("get ", err)
-		panic(err)
+		return err
 	}
 
 	node, err := t.Parse(reader)
 	if err != nil {
 		fmt.Println("parse ", err)
-		panic(err)
+		return err
 	}
 
 	err = t.Find(node)
 	if err != nil {
 		fmt.Println("find ", err)
-		panic(err)
+		return err
 	}
 
 	if t.Track != nil {
@@ -107,13 +88,13 @@ func (t *TrackScrapper) Execute() error {
 			mp3_reader, err := t.Retrieve(t.Track.DownloadURL)
 			if err != nil {
 				fmt.Println("mp3 get ", err)
-				panic(err)
+				return err
 			}
 
 			trackTitle := t.Track.Title + ".mp3"
-			if err := t.Save(mp3_reader, trackTitle, nil); err != nil {
+			if err := t.Save(mp3_reader, trackTitle); err != nil {
 				fmt.Println("save ", err)
-				panic(err)
+				return err
 			}
 		}
 	}
