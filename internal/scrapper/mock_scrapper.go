@@ -80,17 +80,17 @@ func (mr *MockScrapperMockRecorder) Retrieve(url interface{}) *gomock.Call {
 }
 
 // Save mocks base method.
-func (m *MockScrapper) Save(data io.Reader, filename string, folder *string) error {
+func (m *MockScrapper) Save(data io.Reader, filename string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Save", data, filename, folder)
+	ret := m.ctrl.Call(m, "Save", data, filename)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Save indicates an expected call of Save.
-func (mr *MockScrapperMockRecorder) Save(data, filename, folder interface{}) *gomock.Call {
+func (mr *MockScrapperMockRecorder) Save(data, filename interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockScrapper)(nil).Save), data, filename, folder)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockScrapper)(nil).Save), data, filename)
 }
 
 // MockRetriever is a mock of Retriever interface.
@@ -230,15 +230,15 @@ func (m *MockSaver) EXPECT() *MockSaverMockRecorder {
 }
 
 // Save mocks base method.
-func (m *MockSaver) Save(data io.Reader, filename string, folder *string) error {
+func (m *MockSaver) Save(data io.Reader, filename string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Save", data, filename, folder)
+	ret := m.ctrl.Call(m, "Save", data, filename)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Save indicates an expected call of Save.
-func (mr *MockSaverMockRecorder) Save(data, filename, folder interface{}) *gomock.Call {
+func (mr *MockSaverMockRecorder) Save(data, filename interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockSaver)(nil).Save), data, filename, folder)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockSaver)(nil).Save), data, filename)
 }

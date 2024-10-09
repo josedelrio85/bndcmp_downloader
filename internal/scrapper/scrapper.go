@@ -27,5 +27,5 @@ type Finder interface {
 }
 
 type Saver interface {
-	Save(data io.Reader, filename string, folder *string) error
+	Save(data io.Reader, filename string) error
 }

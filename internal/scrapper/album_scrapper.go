@@ -12,13 +12,15 @@ type AlbumScrapper struct {
 	TrackList   []string
 	httpClient  Retriever
 	parseClient Parser
+	saveClient  Saver
 }
 
-func NewAlbumScrapper(httpClient Retriever, parseClient Parser) *AlbumScrapper {
+func NewAlbumScrapper(httpClient Retriever, parseClient Parser, saveClient Saver) *AlbumScrapper {
 	return &AlbumScrapper{
 		TrackList:   []string{},
 		httpClient:  httpClient,
 		parseClient: parseClient,
+		saveClient:  saveClient,
 	}
 }
 
@@ -70,6 +72,6 @@ func (a *AlbumScrapper) processTrackList() []string {
 	return result
 }
 
-func (a *AlbumScrapper) Save(data io.Reader, filename string, folder *string) error {
-	return save(data, filename, folder)
+func (a *AlbumScrapper) Save(data io.Reader, filename string) error {
+	return a.saveClient.Save(data, filename)
 }
