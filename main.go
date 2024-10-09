@@ -5,6 +5,7 @@ import (
 
 	"github.com/josedelrio85/bndcmp_downloader/internal/parser"
 	"github.com/josedelrio85/bndcmp_downloader/internal/retriever"
+	"github.com/josedelrio85/bndcmp_downloader/internal/saver"
 	"github.com/josedelrio85/bndcmp_downloader/internal/scrapper"
 )
 
@@ -14,12 +15,13 @@ func main() {
 
 	httpClient := retriever.NewHttpClient()
 	parseClient := parser.NewParseClient()
-	trackScrapper := scrapper.NewTrackScrapper(trackURL, httpClient, parseClient)
+	saveFolder := "downloads"
+	saveClient := saver.NewLocalSaver(&saveFolder)
+	trackScrapper := scrapper.NewTrackScrapper(trackURL, httpClient, parseClient, saveClient)
 	if err := trackScrapper.Execute(); err != nil {
 		fmt.Println("execute ", err)
 		panic(err)
 	}
-
 	// albumURL := "https://kinggizzard.bandcamp.com/album/12-bar-bruise"
 	// albumScrapper(albumURL)
 }
