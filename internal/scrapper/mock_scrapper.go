@@ -35,6 +35,20 @@ func (m *MockScrapper) EXPECT() *MockScrapperMockRecorder {
 	return m.recorder
 }
 
+// Execute mocks base method.
+func (m *MockScrapper) Execute() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Execute")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Execute indicates an expected call of Execute.
+func (mr *MockScrapperMockRecorder) Execute() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Execute", reflect.TypeOf((*MockScrapper)(nil).Execute))
+}
+
 // Find mocks base method.
 func (m *MockScrapper) Find(node *html.Node) error {
 	m.ctrl.T.Helper()
@@ -241,4 +255,41 @@ func (m *MockSaver) Save(data io.Reader, filename string) error {
 func (mr *MockSaverMockRecorder) Save(data, filename interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockSaver)(nil).Save), data, filename)
+}
+
+// MockExecuter is a mock of Executer interface.
+type MockExecuter struct {
+	ctrl     *gomock.Controller
+	recorder *MockExecuterMockRecorder
+}
+
+// MockExecuterMockRecorder is the mock recorder for MockExecuter.
+type MockExecuterMockRecorder struct {
+	mock *MockExecuter
+}
+
+// NewMockExecuter creates a new mock instance.
+func NewMockExecuter(ctrl *gomock.Controller) *MockExecuter {
+	mock := &MockExecuter{ctrl: ctrl}
+	mock.recorder = &MockExecuterMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockExecuter) EXPECT() *MockExecuterMockRecorder {
+	return m.recorder
+}
+
+// Execute mocks base method.
+func (m *MockExecuter) Execute() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Execute")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Execute indicates an expected call of Execute.
+func (mr *MockExecuterMockRecorder) Execute() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Execute", reflect.TypeOf((*MockExecuter)(nil).Execute))
 }

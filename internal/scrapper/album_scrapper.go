@@ -1,7 +1,9 @@
 package scrapper
 
 import (
+	"fmt"
 	io "io"
+	"net/url"
 	"regexp"
 	"strings"
 
@@ -9,18 +11,24 @@ import (
 )
 
 type AlbumScrapper struct {
-	TrackList   []string
-	httpClient  Retriever
-	parseClient Parser
-	saveClient  Saver
+	URL           *url.URL
+	TrackList     []string
+	httpClient    Retriever
+	parseClient   Parser
+	saveClient    Saver
+	executeClient func(string, Retriever, Parser, Saver) Executer
 }
 
-func NewAlbumScrapper(httpClient Retriever, parseClient Parser, saveClient Saver) *AlbumScrapper {
+func NewAlbumScrapper(url *url.URL, httpClient Retriever, parseClient Parser, saveClient Saver) *AlbumScrapper {
 	return &AlbumScrapper{
+		URL:         url,
 		TrackList:   []string{},
 		httpClient:  httpClient,
 		parseClient: parseClient,
 		saveClient:  saveClient,
+		executeClient: func(url string, httpClient Retriever, parseClient Parser, saveClient Saver) Executer {
+			return NewTrackScrapper(url, httpClient, parseClient, saveClient)
+		},
 	}
 }
 
@@ -73,5 +81,41 @@ func (a *AlbumScrapper) processTrackList() []string {
 }
 
 func (a *AlbumScrapper) Save(data io.Reader, filename string) error {
-	return a.saveClient.Save(data, filename)
+	return nil
+}
+
+func (a *AlbumScrapper) Execute() error {
+	fmt.Println("starting album scrapper for url: ", a.URL.String())
+	reader, err := a.Retrieve(a.URL.String())
+	if err != nil {
+		fmt.Println("get ", err)
+		return err
+	}
+
+	node, err := a.Parse(reader)
+	if err != nil {
+		fmt.Println("parse ", err)
+		return err
+	}
+
+	err = a.Find(node)
+	if err != nil {
+		fmt.Println("find ", err)
+		return err
+	}
+
+	baseURL := url.URL{
+		Scheme: a.URL.Scheme,
+		Host:   a.URL.Host,
+	}
+	for _, track := range a.TrackList {
+		trackURL := baseURL.ResolveReference(&url.URL{Path: track})
+		fmt.Println("retrieving track: ", trackURL.String())
+		trackScrapper := a.executeClient(trackURL.String(), a.httpClient, a.parseClient, a.saveClient)
+		if err := trackScrapper.Execute(); err != nil {
+			fmt.Println("execute ", err)
+			return err
+		}
+	}
+	return nil
 }

@@ -12,6 +12,7 @@ type Scrapper interface {
 	Parser
 	Finder
 	Saver
+	Executer
 }
 
 type Retriever interface {
@@ -28,4 +29,8 @@ type Finder interface {
 
 type Saver interface {
 	Save(data io.Reader, filename string) error
+}
+
+type Executer interface {
+	Execute() error
 }
