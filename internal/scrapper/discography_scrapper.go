@@ -1,8 +1,8 @@
 package scrapper
 
 import (
-	"fmt"
 	io "io"
+	"log"
 	"net/url"
 	"regexp"
 	"strings"
@@ -85,22 +85,22 @@ func (a *DiscographyScrapper) Save(data io.Reader, filename string) error {
 }
 
 func (a *DiscographyScrapper) Execute() error {
-	fmt.Println("starting discography scrapper for url: ", a.discographyURL.String())
+	log.Printf("Starting discography scrapper for URL: %s", a.discographyURL.String())
 	reader, err := a.Retrieve(a.discographyURL.String())
 	if err != nil {
-		fmt.Println("get ", err)
+		log.Printf("Error retrieving discography page: %v", err)
 		return err
 	}
 
 	node, err := a.Parse(reader)
 	if err != nil {
-		fmt.Println("parse ", err)
+		log.Printf("Error parsing discography HTML: %v", err)
 		return err
 	}
 
 	err = a.Find(node)
 	if err != nil {
-		fmt.Println("find ", err)
+		log.Printf("Error finding albums in discography HTML: %v", err)
 		return err
 	}
 
@@ -110,10 +110,10 @@ func (a *DiscographyScrapper) Execute() error {
 	}
 	for _, album := range a.AlbumList {
 		albumURL := baseURL.ResolveReference(&url.URL{Path: album})
-		fmt.Println("retrieving album: ", albumURL.String())
+		log.Printf("Retrieving album: %s", albumURL.String())
 		albumScrapper := a.executeClient(albumURL, a.httpClient, a.parseClient, a.saveClient)
 		if err := albumScrapper.Execute(); err != nil {
-			fmt.Println("execute ", err)
+			log.Printf("Error executing album scrapper for %s: %v", albumURL.String(), err)
 			return err
 		}
 	}
