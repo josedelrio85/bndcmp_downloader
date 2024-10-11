@@ -61,7 +61,6 @@ func (s *LocalSaver) checkFolder(base string) error {
 
 func (s *LocalSaver) saveFile(base string, filename string, data io.Reader) error {
 	filePath := filepath.Join(base, filename)
-	fmt.Println(filePath)
 	newFile, err := os.Create(filePath)
 	if err != nil {
 		return err
