@@ -6,13 +6,13 @@ import (
 	"golang.org/x/net/html"
 )
 
-type parseClient struct{}
+type ParseClient struct{}
 
-func NewParseClient() *parseClient {
-	return &parseClient{}
+func NewParseClient() *ParseClient {
+	return &ParseClient{}
 }
 
-func (p *parseClient) Parse(data io.Reader) (*html.Node, error) {
+func (p *ParseClient) Parse(data io.Reader) (*html.Node, error) {
 	node, err := html.Parse(data)
 	if err != nil {
 		return nil, err

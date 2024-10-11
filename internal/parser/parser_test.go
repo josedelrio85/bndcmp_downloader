@@ -19,7 +19,7 @@ func TestParseClient(t *testing.T) {
 
 type TestParseClientSuite struct {
 	suite.Suite
-	parseClient *parseClient
+	parseClient *ParseClient
 }
 
 func (s *TestParseClientSuite) SetupTest() {
