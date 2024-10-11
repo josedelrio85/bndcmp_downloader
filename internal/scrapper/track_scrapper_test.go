@@ -43,7 +43,8 @@ func (s *TestTrackScrapperSuite) SetupTest() {
 	s.mockParseClient = NewMockParser(s.controller)
 	s.mockSaveClient = NewMockSaver(s.controller)
 	s.trackURL = "https://kinggizzard.bandcamp.com/track/elbow"
-	s.trackScrapper = NewTrackScrapper(s.trackURL, s.mockHttpClient, s.mockParseClient, s.mockSaveClient)
+	downloadedTracks := make(map[string]bool)
+	s.trackScrapper = NewTrackScrapper(s.trackURL, s.mockHttpClient, s.mockParseClient, s.mockSaveClient, &downloadedTracks)
 }
 
 func (s *TestTrackScrapperSuite) TearDownTest() {

@@ -2,8 +2,10 @@ package scrapper
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
+	"strings"
 
 	"github.com/josedelrio85/bndcmp_downloader/internal/bandcamp"
 	"github.com/josedelrio85/bndcmp_downloader/internal/model"
@@ -11,20 +13,22 @@ import (
 )
 
 type TrackScrapper struct {
-	URL         string
-	Track       *model.Track
-	httpClient  Retriever
-	parseClient Parser
-	saveClient  Saver
+	URL              string
+	Track            *model.Track
+	httpClient       Retriever
+	parseClient      Parser
+	saveClient       Saver
+	downloadedTracks *map[string]bool
 }
 
-func NewTrackScrapper(URL string, httpClient Retriever, parseClient Parser, saveClient Saver) *TrackScrapper {
+func NewTrackScrapper(URL string, httpClient Retriever, parseClient Parser, saveClient Saver, downloadedTracks *map[string]bool) *TrackScrapper {
 	return &TrackScrapper{
-		URL:         URL,
-		Track:       &model.Track{},
-		httpClient:  httpClient,
-		parseClient: parseClient,
-		saveClient:  saveClient,
+		URL:              URL,
+		Track:            &model.Track{},
+		httpClient:       httpClient,
+		parseClient:      parseClient,
+		saveClient:       saveClient,
+		downloadedTracks: downloadedTracks,
 	}
 }
 
@@ -83,6 +87,9 @@ func (t *TrackScrapper) Execute() error {
 	}
 
 	if t.Track != nil {
+		if t.isDownloaded() {
+			return nil
+		}
 		log.Printf("Processing download for track: %s", t.Track.Title)
 		if t.Track.DownloadURL != "" {
 			mp3_reader, err := t.Retrieve(t.Track.DownloadURL)
@@ -99,4 +106,23 @@ func (t *TrackScrapper) Execute() error {
 	}
 
 	return nil
+}
+
+func (t *TrackScrapper) isDownloaded() bool {
+	if t.downloadedTracks != nil {
+		filePath := t.generateFilePath()
+		if _, ok := (*t.downloadedTracks)[filePath]; ok {
+			log.Printf("Track %s already downloaded", filePath)
+			return true
+		}
+	}
+	return false
+}
+
+func (t *TrackScrapper) generateFilePath() string {
+	trackName := fmt.Sprintf("%02d - %s.mp3", t.Track.TrackNumber, t.Track.Title)
+	if t.Track.Album == nil {
+		return strings.Join([]string{t.Track.Artist, trackName}, "/")
+	}
+	return strings.Join([]string{t.Track.Artist, *t.Track.Album, trackName}, "/")
 }

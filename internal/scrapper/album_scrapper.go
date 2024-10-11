@@ -11,24 +11,26 @@ import (
 )
 
 type AlbumScrapper struct {
-	URL           *url.URL
-	TrackList     []string
-	httpClient    Retriever
-	parseClient   Parser
-	saveClient    Saver
-	executeClient func(string, Retriever, Parser, Saver) Executer
+	URL              *url.URL
+	TrackList        []string
+	httpClient       Retriever
+	parseClient      Parser
+	saveClient       Saver
+	executeClient    func(string, Retriever, Parser, Saver, *map[string]bool) Executer
+	downloadedTracks *map[string]bool
 }
 
-func NewAlbumScrapper(url *url.URL, httpClient Retriever, parseClient Parser, saveClient Saver) *AlbumScrapper {
+func NewAlbumScrapper(url *url.URL, httpClient Retriever, parseClient Parser, saveClient Saver, downloadedTracks *map[string]bool) *AlbumScrapper {
 	return &AlbumScrapper{
 		URL:         url,
 		TrackList:   []string{},
 		httpClient:  httpClient,
 		parseClient: parseClient,
 		saveClient:  saveClient,
-		executeClient: func(url string, httpClient Retriever, parseClient Parser, saveClient Saver) Executer {
-			return NewTrackScrapper(url, httpClient, parseClient, saveClient)
+		executeClient: func(url string, httpClient Retriever, parseClient Parser, saveClient Saver, downloadedTracks *map[string]bool) Executer {
+			return NewTrackScrapper(url, httpClient, parseClient, saveClient, downloadedTracks)
 		},
+		downloadedTracks: downloadedTracks,
 	}
 }
 
@@ -108,10 +110,11 @@ func (a *AlbumScrapper) Execute() error {
 		Scheme: a.URL.Scheme,
 		Host:   a.URL.Host,
 	}
+	log.Printf("%d tracks to download \n", len(a.TrackList))
 	for _, track := range a.TrackList {
 		trackURL := baseURL.ResolveReference(&url.URL{Path: track})
 		log.Println("Retrieving track:", trackURL.String())
-		trackScrapper := a.executeClient(trackURL.String(), a.httpClient, a.parseClient, a.saveClient)
+		trackScrapper := a.executeClient(trackURL.String(), a.httpClient, a.parseClient, a.saveClient, a.downloadedTracks)
 		if err := trackScrapper.Execute(); err != nil {
 			log.Println("Error executing track scrapper:", err)
 			return err

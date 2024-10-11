@@ -50,7 +50,8 @@ func (s *TestalbumScrapperSuite) SetupTest() {
 		Host:   "kinggizzard.bandcamp.com",
 		Path:   "/album/12-bar-bruise",
 	}
-	s.albumScrapper = NewAlbumScrapper(s.albumURL, s.mockHttpClient, s.mockParseClient, s.mockSaveClient)
+	downloadedTracks := make(map[string]bool)
+	s.albumScrapper = NewAlbumScrapper(s.albumURL, s.mockHttpClient, s.mockParseClient, s.mockSaveClient, &downloadedTracks)
 }
 
 func (s *TestalbumScrapperSuite) TearDownTest() {
@@ -248,7 +249,7 @@ func (s *TestalbumScrapperSuite) TestExecute_Success() {
 			return nil
 		},
 	}
-	s.albumScrapper.executeClient = func(url string, httpClient Retriever, parseClient Parser, saveClient Saver) Executer {
+	s.albumScrapper.executeClient = func(url string, httpClient Retriever, parseClient Parser, saveClient Saver, downloadedTracks *map[string]bool) Executer {
 		mockExecuteClient.URL = url
 		return mockExecuteClient
 	}
@@ -309,7 +310,7 @@ func (s *TestalbumScrapperSuite) TestExecute_SaveError() {
 			return mockedError
 		},
 	}
-	s.albumScrapper.executeClient = func(url string, httpClient Retriever, parseClient Parser, saveClient Saver) Executer {
+	s.albumScrapper.executeClient = func(url string, httpClient Retriever, parseClient Parser, saveClient Saver, downloadedTracks *map[string]bool) Executer {
 		mockExecuteClient.URL = url
 		return mockExecuteClient
 	}
