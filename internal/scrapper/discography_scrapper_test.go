@@ -50,7 +50,8 @@ func (s *TestDiscographyScrapperSuite) SetupTest() {
 		Host:   "kinggizzard.bandcamp.com",
 		Path:   "/music",
 	}
-	s.DiscographyScrapper = NewDiscographyScrapper(s.discographyURL, s.mockHttpClient, s.mockParseClient, s.mockSaveClient)
+	downloadedTracks := make(map[string]bool)
+	s.DiscographyScrapper = NewDiscographyScrapper(s.discographyURL, s.mockHttpClient, s.mockParseClient, s.mockSaveClient, &downloadedTracks)
 }
 
 func (s *TestDiscographyScrapperSuite) TearDownTest() {
@@ -326,7 +327,7 @@ func (s *TestDiscographyScrapperSuite) TestExecute_Success() {
 			return nil
 		},
 	}
-	s.DiscographyScrapper.executeClient = func(discographyURL *url.URL, httpClient Retriever, parseClient Parser, saveClient Saver) Executer {
+	s.DiscographyScrapper.executeClient = func(discographyURL *url.URL, httpClient Retriever, parseClient Parser, saveClient Saver, downloadedTracks *map[string]bool) Executer {
 		mockExecuteClient.URL = discographyURL
 		return mockExecuteClient
 	}
@@ -387,7 +388,7 @@ func (s *TestDiscographyScrapperSuite) TestExecute_SaveError() {
 			return mockedError
 		},
 	}
-	s.DiscographyScrapper.executeClient = func(discographyURL *url.URL, httpClient Retriever, parseClient Parser, saveClient Saver) Executer {
+	s.DiscographyScrapper.executeClient = func(discographyURL *url.URL, httpClient Retriever, parseClient Parser, saveClient Saver, downloadedTracks *map[string]bool) Executer {
 		mockExecuteClient.URL = discographyURL
 		return mockExecuteClient
 	}
