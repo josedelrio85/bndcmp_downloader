@@ -1,6 +1,12 @@
 package bandcamp
 
-import "github.com/josedelrio85/bndcmp_downloader/internal/model"
+import (
+	"strings"
+
+	"github.com/josedelrio85/bndcmp_downloader/internal/model"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+)
 
 type TrAlbum struct {
 	ForTheCurious              string      `json:"for the curious"`
@@ -129,8 +135,11 @@ func (t *TrAlbum) ToTrack() *model.Track {
 	}
 
 	track := model.Track{
-		Title: t.Current.Title,
-		URL:   t.URL,
+		Title:       t.Current.Title,
+		TrackNumber: t.Current.TrackNumber,
+		Artist:      t.Artist,
+		Album:       t.getAlbumName(),
+		URL:         t.URL,
 	}
 
 	if len(t.Trackinfo) > 0 {
@@ -138,4 +147,20 @@ func (t *TrAlbum) ToTrack() *model.Track {
 	}
 
 	return &track
+}
+
+func (t *TrAlbum) getAlbumName() *string {
+	if t == nil {
+		return nil
+	}
+
+	album := strings.Replace(t.AlbumURL, "/album/", "", -1)
+	album = strings.Replace(album, "-", " ", -1)
+	words := strings.Fields(album)
+	caser := cases.Title(language.Und)
+	for i, word := range words {
+		words[i] = caser.String(word)
+	}
+	album = strings.Join(words, " ")
+	return &album
 }
