@@ -134,8 +134,10 @@ func (t *TrAlbum) ToTrack() *model.Track {
 		return nil
 	}
 
+	sanitizedTitle := strings.Replace(t.Current.Title, "/", "-", -1)
+
 	track := model.Track{
-		Title:       t.Current.Title,
+		Title:       sanitizedTitle,
 		TrackNumber: t.Current.TrackNumber,
 		Artist:      t.Artist,
 		Album:       t.getAlbumName(),

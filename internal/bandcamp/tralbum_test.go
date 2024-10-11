@@ -45,6 +45,25 @@ func (s *TestTrAlbumSuite) TestToTrack() {
 			trAlbum:  nil,
 			expected: nil,
 		},
+		{
+			name: "Track with slash",
+			trAlbum: &TrAlbum{
+				Current:  Current{Title: "Test / Track"},
+				Artist:   "Test Artist",
+				URL:      "https://example.com/track",
+				AlbumURL: "/album/test-album",
+				Trackinfo: []TrackInfo{
+					{File: File{Mp3128: "https://example.com/download"}},
+				},
+			},
+			expected: &model.Track{
+				Title:       "Test - Track",
+				Artist:      "Test Artist",
+				Album:       toPointer("Test Album"),
+				URL:         "https://example.com/track",
+				DownloadURL: "https://example.com/download",
+			},
+		},
 	}
 
 	for _, tt := range tests {
