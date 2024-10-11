@@ -58,8 +58,8 @@ func (t *TrackScrapper) Find(node *html.Node) error {
 	return nil
 }
 
-func (t *TrackScrapper) Save(data io.Reader, filename string) error {
-	return t.saveClient.Save(data, filename)
+func (t *TrackScrapper) Save(data io.Reader, track *model.Track) error {
+	return t.saveClient.Save(data, track)
 }
 
 func (t *TrackScrapper) Execute() error {
@@ -91,8 +91,7 @@ func (t *TrackScrapper) Execute() error {
 				return err
 			}
 
-			trackTitle := t.Track.Title + ".mp3"
-			if err := t.Save(mp3_reader, trackTitle); err != nil {
+			if err := t.Save(mp3_reader, t.Track); err != nil {
 				fmt.Println("save ", err)
 				return err
 			}

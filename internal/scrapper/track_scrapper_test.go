@@ -125,30 +125,27 @@ func (s *TestTrackScrapperSuite) TestFind_Error() {
 
 func (s *TestTrackScrapperSuite) TestSave_Success() {
 	mockReader := bytes.NewReader([]byte("mock response data"))
-	filename := "foobar.txt"
+	track := &model.Track{}
 
-	s.mockSaveClient.EXPECT().Save(mockReader, filename).Return(nil)
+	s.mockSaveClient.EXPECT().Save(mockReader, track).Return(nil)
 
-	err := s.trackScrapper.Save(mockReader, filename)
+	err := s.trackScrapper.Save(mockReader, track)
 	s.NoError(err)
 }
 
 func (s *TestTrackScrapperSuite) TestSave_Error() {
 	mockReader := bytes.NewReader([]byte("mock response data"))
-	filename := "foobar.txt"
+	track := &model.Track{}
 
 	mockedError := errors.New("failed to save file")
-	s.mockSaveClient.EXPECT().Save(mockReader, filename).Return(mockedError)
+	s.mockSaveClient.EXPECT().Save(mockReader, track).Return(mockedError)
 
-	err := s.trackScrapper.Save(mockReader, filename)
+	err := s.trackScrapper.Save(mockReader, track)
 	s.Error(err)
 	s.Equal(mockedError, err)
 }
 
 func (s *TestTrackScrapperSuite) TestExecute_Success() {
-	mockURL := "https://example.com/track"
-	s.trackScrapper.URL = mockURL
-
 	var trAlbum bandcamp.TrAlbum
 	err := json.Unmarshal([]byte(validJSONExample), &trAlbum)
 	if err != nil {
@@ -157,14 +154,14 @@ func (s *TestTrackScrapperSuite) TestExecute_Success() {
 	downloadURL := trAlbum.Trackinfo[0].File.Mp3128
 
 	mockReader := bytes.NewReader([]byte(validExample))
-	s.mockHttpClient.EXPECT().Retrieve(mockURL).Return(mockReader, nil)
+	s.mockHttpClient.EXPECT().Retrieve(s.trackURL).Return(mockReader, nil)
 
 	mockNode, _ := html.Parse(bytes.NewReader([]byte(validExample)))
 	s.mockParseClient.EXPECT().Parse(mockReader).Return(mockNode, nil)
 
 	mockMP3Reader := bytes.NewReader([]byte("mock mp3 data"))
 	s.mockHttpClient.EXPECT().Retrieve(downloadURL).Return(mockMP3Reader, nil)
-	s.mockSaveClient.EXPECT().Save(mockMP3Reader, "Elbow.mp3").Return(nil)
+	s.mockSaveClient.EXPECT().Save(mockMP3Reader, trAlbum.ToTrack()).Return(nil)
 
 	err = s.trackScrapper.Execute()
 
@@ -220,9 +217,6 @@ func (s *TestTrackScrapperSuite) TestExecute_FindError() {
 }
 
 func (s *TestTrackScrapperSuite) TestExecute_SaveError() {
-	mockURL := "https://example.com/track"
-	s.trackScrapper.URL = mockURL
-
 	var trAlbum bandcamp.TrAlbum
 	err := json.Unmarshal([]byte(validJSONExample), &trAlbum)
 	if err != nil {
@@ -231,7 +225,7 @@ func (s *TestTrackScrapperSuite) TestExecute_SaveError() {
 	downloadURL := trAlbum.Trackinfo[0].File.Mp3128
 
 	mockReader := bytes.NewReader([]byte(validExample))
-	s.mockHttpClient.EXPECT().Retrieve(mockURL).Return(mockReader, nil)
+	s.mockHttpClient.EXPECT().Retrieve(s.trackURL).Return(mockReader, nil)
 
 	mockNode, _ := html.Parse(mockReader)
 	s.mockParseClient.EXPECT().Parse(mockReader).Return(mockNode, nil)
@@ -240,7 +234,8 @@ func (s *TestTrackScrapperSuite) TestExecute_SaveError() {
 	s.mockHttpClient.EXPECT().Retrieve(downloadURL).Return(mockMP3Reader, nil)
 
 	mockError := errors.New("save error")
-	s.mockSaveClient.EXPECT().Save(mockMP3Reader, "Elbow.mp3").Return(mockError)
+	s.trackScrapper.Track = trAlbum.ToTrack()
+	s.mockSaveClient.EXPECT().Save(mockMP3Reader, s.trackScrapper.Track).Return(mockError)
 
 	err = s.trackScrapper.Execute()
 

@@ -9,6 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	model "github.com/josedelrio85/bndcmp_downloader/internal/model"
 	html "golang.org/x/net/html"
 )
 
@@ -94,17 +95,17 @@ func (mr *MockScrapperMockRecorder) Retrieve(url interface{}) *gomock.Call {
 }
 
 // Save mocks base method.
-func (m *MockScrapper) Save(data io.Reader, filename string) error {
+func (m *MockScrapper) Save(data io.Reader, track *model.Track) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Save", data, filename)
+	ret := m.ctrl.Call(m, "Save", data, track)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Save indicates an expected call of Save.
-func (mr *MockScrapperMockRecorder) Save(data, filename interface{}) *gomock.Call {
+func (mr *MockScrapperMockRecorder) Save(data, track interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockScrapper)(nil).Save), data, filename)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockScrapper)(nil).Save), data, track)
 }
 
 // MockRetriever is a mock of Retriever interface.
@@ -244,17 +245,17 @@ func (m *MockSaver) EXPECT() *MockSaverMockRecorder {
 }
 
 // Save mocks base method.
-func (m *MockSaver) Save(data io.Reader, filename string) error {
+func (m *MockSaver) Save(data io.Reader, track *model.Track) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Save", data, filename)
+	ret := m.ctrl.Call(m, "Save", data, track)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Save indicates an expected call of Save.
-func (mr *MockSaverMockRecorder) Save(data, filename interface{}) *gomock.Call {
+func (mr *MockSaverMockRecorder) Save(data, track interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockSaver)(nil).Save), data, filename)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockSaver)(nil).Save), data, track)
 }
 
 // MockExecuter is a mock of Executer interface.

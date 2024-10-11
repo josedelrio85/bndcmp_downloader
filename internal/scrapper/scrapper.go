@@ -3,6 +3,7 @@ package scrapper
 import (
 	"io"
 
+	"github.com/josedelrio85/bndcmp_downloader/internal/model"
 	"golang.org/x/net/html"
 )
 
@@ -28,7 +29,7 @@ type Finder interface {
 }
 
 type Saver interface {
-	Save(data io.Reader, filename string) error
+	Save(data io.Reader, track *model.Track) error
 }
 
 type Executer interface {
