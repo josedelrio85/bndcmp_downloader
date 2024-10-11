@@ -25,14 +25,26 @@ func main() {
 	// 	return
 	// }
 
-	albumURL := "https://kinggizzard.bandcamp.com/album/12-bar-bruise"
-	parsedAlbumURL, err := url.Parse(albumURL)
+	// albumURL := "https://kinggizzard.bandcamp.com/album/12-bar-bruise"
+	// parsedAlbumURL, err := url.Parse(albumURL)
+	// if err != nil {
+	// 	fmt.Println("parsing album url ", err)
+	// 	return
+	// }
+	// albumScrapper := scrapper.NewAlbumScrapper(parsedAlbumURL, httpClient, parseClient, saveClient)
+	// if err := albumScrapper.Execute(); err != nil {
+	// 	fmt.Println("execute ", err)
+	// 	return
+	// }
+
+	discographyURL := "https://kinggizzard.bandcamp.com/music"
+	parsedDiscographyURL, err := url.Parse(discographyURL)
 	if err != nil {
-		fmt.Println("parsing album url ", err)
+		fmt.Println("parsing discography url ", err)
 		return
 	}
-	albumScrapper := scrapper.NewAlbumScrapper(parsedAlbumURL, httpClient, parseClient, saveClient)
-	if err := albumScrapper.Execute(); err != nil {
+	discographyScrapper := scrapper.NewDiscographyScrapper(parsedDiscographyURL, httpClient, parseClient, saveClient)
+	if err := discographyScrapper.Execute(); err != nil {
 		fmt.Println("execute ", err)
 		return
 	}
