@@ -166,3 +166,13 @@ func (t *TrAlbum) getAlbumName() *string {
 	album = strings.Join(words, " ")
 	return &album
 }
+
+// Album is the struct that represents an album as available in music page, ol tag
+type Album struct {
+	ArtID   int64  `json:"art_id"`
+	BandID  int64  `json:"band_id"`
+	ID      int64  `json:"id"`
+	PageURL string `json:"page_url"`
+	Title   string `json:"title"`
+	Type    string `json:"type"`
+}
