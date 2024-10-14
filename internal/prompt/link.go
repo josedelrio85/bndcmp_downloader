@@ -18,11 +18,14 @@ type Link interface {
 }
 
 type ScrapTypeQuestionLink struct {
-	next Link
+	next     Link
+	prompter StringPrompter
 }
 
 func NewScrapTypeQuestionLink() *ScrapTypeQuestionLink {
-	return &ScrapTypeQuestionLink{}
+	return &ScrapTypeQuestionLink{
+		prompter: &DefaultStringPrompter{},
+	}
 }
 
 func (r *ScrapTypeQuestionLink) Handle(message *ChainMessage) {
@@ -31,7 +34,7 @@ func (r *ScrapTypeQuestionLink) Handle(message *ChainMessage) {
 	2. Album
 	3. Discography
 	`
-	inputValue := stringPrompt(question)
+	inputValue := r.prompter.Prompt(question)
 
 	scrapTypes := map[string]scrapper.ScrapType{
 		"1": scrapper.Track,
@@ -55,15 +58,18 @@ func (r *ScrapTypeQuestionLink) SetNext(next Link) Link {
 }
 
 type URLCheckerLink struct {
-	next Link
+	next     Link
+	prompter StringPrompter
 }
 
 func NewURLCheckerLink() *URLCheckerLink {
-	return &URLCheckerLink{}
+	return &URLCheckerLink{
+		prompter: &DefaultStringPrompter{},
+	}
 }
 
 func (c *URLCheckerLink) Handle(message *ChainMessage) {
-	url := stringPrompt(c.getQuestion(message))
+	url := c.prompter.Prompt(c.getQuestion(message))
 	bandcampURL, err := c.processBandcampURL(url, message.ScrapType)
 	if err != nil {
 		log.Printf("Error processing URL: %v\n", err)
@@ -114,11 +120,14 @@ func (c *URLCheckerLink) SetNext(next Link) Link {
 }
 
 type StorageQuestionLink struct {
-	next Link
+	next     Link
+	prompter StringPrompter
 }
 
 func NewStorageQuestionLink() *StorageQuestionLink {
-	return &StorageQuestionLink{}
+	return &StorageQuestionLink{
+		prompter: &DefaultStringPrompter{},
+	}
 }
 
 func (s *StorageQuestionLink) Handle(message *ChainMessage) {
@@ -132,13 +141,13 @@ func (s *StorageQuestionLink) Handle(message *ChainMessage) {
 		question += fmt.Sprintf("\t%s. %s\n", key, value)
 	}
 
-	storageType := stringPrompt(question)
+	storageType := s.prompter.Prompt(question)
 
 	switch storageType {
 	case "1":
 		message.StorageType = "."
 	case "2":
-		message.StorageType = stringPrompt("Enter the custom directory: ")
+		message.StorageType = s.prompter.Prompt("Enter the custom directory: ")
 	default:
 		log.Println("Invalid value")
 		return
@@ -154,8 +163,14 @@ func (s *StorageQuestionLink) SetNext(next Link) Link {
 	return next
 }
 
-// stringPrompt asks for a string value using the label
-func stringPrompt(label string) string {
+type StringPrompter interface {
+	Prompt(label string) string
+}
+
+type DefaultStringPrompter struct{}
+
+// Prompt asks for a string value using the label
+func (d *DefaultStringPrompter) Prompt(label string) string {
 	var s string
 	r := bufio.NewReader(os.Stdin)
 	for {

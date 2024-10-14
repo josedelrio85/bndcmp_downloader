@@ -243,3 +243,90 @@ func (s *TestTrackScrapperSuite) TestExecute_SaveError() {
 	s.Error(err)
 	s.Equal(mockError, err)
 }
+
+func (s *TestTrackScrapperSuite) TestFind_NoDataTralbum() {
+	mockNode := &html.Node{
+		Type: html.ElementNode,
+		Data: "div",
+	}
+
+	err := s.trackScrapper.Find(mockNode)
+
+	s.NoError(err)
+	s.Equal(&model.Track{}, s.trackScrapper.Track)
+}
+
+func (s *TestTrackScrapperSuite) TestFind_InvalidJSON() {
+	mockNode := &html.Node{
+		Type: html.ElementNode,
+		Data: "script",
+		Attr: []html.Attribute{
+			{
+				Key: "data-tralbum",
+				Val: "{invalid json}",
+			},
+		},
+	}
+
+	err := s.trackScrapper.Find(mockNode)
+
+	s.Error(err)
+	s.Contains(err.Error(), "invalid character")
+}
+
+func (s *TestTrackScrapperSuite) TestIsDownloaded_True() {
+	filePath := "Artist/Album/01 - Track.mp3"
+	(*s.trackScrapper.downloadedTracks)[filePath] = true
+	s.trackScrapper.Track = &model.Track{
+		Artist:      "Artist",
+		Album:       toPointer("Album"),
+		Title:       "Track",
+		TrackNumber: 1,
+	}
+
+	result := s.trackScrapper.isDownloaded()
+
+	s.True(result)
+}
+
+func (s *TestTrackScrapperSuite) TestIsDownloaded_False() {
+	s.trackScrapper.Track = &model.Track{
+		Artist:      "Artist",
+		Album:       toPointer("Album"),
+		Title:       "Track",
+		TrackNumber: 1,
+	}
+
+	result := s.trackScrapper.isDownloaded()
+
+	s.False(result)
+}
+
+func (s *TestTrackScrapperSuite) TestGenerateFilePath_WithAlbum() {
+	s.trackScrapper.Track = &model.Track{
+		Artist:      "Artist",
+		Album:       toPointer("Album"),
+		Title:       "Track",
+		TrackNumber: 1,
+	}
+
+	result := s.trackScrapper.generateFilePath()
+
+	s.Equal("Artist/Album/01 - Track.mp3", result)
+}
+
+func (s *TestTrackScrapperSuite) TestGenerateFilePath_WithoutAlbum() {
+	s.trackScrapper.Track = &model.Track{
+		Artist:      "Artist",
+		Title:       "Track",
+		TrackNumber: 1,
+	}
+
+	result := s.trackScrapper.generateFilePath()
+
+	s.Equal("Artist/01 - Track.mp3", result)
+}
+
+func toPointer(s string) *string {
+	return &s
+}

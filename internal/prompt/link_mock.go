@@ -58,3 +58,40 @@ func (mr *MockLinkMockRecorder) SetNext(next interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetNext", reflect.TypeOf((*MockLink)(nil).SetNext), next)
 }
+
+// MockStringPrompter is a mock of StringPrompter interface.
+type MockStringPrompter struct {
+	ctrl     *gomock.Controller
+	recorder *MockStringPrompterMockRecorder
+}
+
+// MockStringPrompterMockRecorder is the mock recorder for MockStringPrompter.
+type MockStringPrompterMockRecorder struct {
+	mock *MockStringPrompter
+}
+
+// NewMockStringPrompter creates a new mock instance.
+func NewMockStringPrompter(ctrl *gomock.Controller) *MockStringPrompter {
+	mock := &MockStringPrompter{ctrl: ctrl}
+	mock.recorder = &MockStringPrompterMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockStringPrompter) EXPECT() *MockStringPrompterMockRecorder {
+	return m.recorder
+}
+
+// Prompt mocks base method.
+func (m *MockStringPrompter) Prompt(label string) string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Prompt", label)
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Prompt indicates an expected call of Prompt.
+func (mr *MockStringPrompterMockRecorder) Prompt(label interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Prompt", reflect.TypeOf((*MockStringPrompter)(nil).Prompt), label)
+}

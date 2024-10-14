@@ -74,7 +74,7 @@ func (s *TestTrAlbumSuite) TestToTrack() {
 	}
 }
 
-func (s *TestTrAlbumSuite) TestGetAlbumName() {
+func (s *TestTrAlbumSuite) Test_getAlbumName() {
 	tests := []struct {
 		name     string
 		trAlbum  *TrAlbum
