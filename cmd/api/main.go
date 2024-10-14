@@ -3,15 +3,11 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/gorilla/mux"
-	"github.com/josedelrio85/bndcmp_downloader/internal/album_catalog"
 	"github.com/josedelrio85/bndcmp_downloader/internal/handler"
-	"github.com/josedelrio85/bndcmp_downloader/internal/parser"
-	"github.com/josedelrio85/bndcmp_downloader/internal/retriever"
-	"github.com/josedelrio85/bndcmp_downloader/internal/saver"
 	"github.com/josedelrio85/bndcmp_downloader/internal/scrapper"
+	"github.com/josedelrio85/bndcmp_downloader/internal/setup"
 )
 
 func main() {
@@ -29,24 +25,14 @@ func main() {
 }
 
 func setupHttpHHandler() *handler.HttpHandler {
-	baseFolder := "downloads"
+	config := setup.LoadConfig()
 
-	retrieverClient := retriever.NewHttpClient()
-	parseClient := parser.NewParseClient()
-	saveClient := saver.NewLocalSaver(&baseFolder)
-
-	albumCatalog := album_catalog.NewInMemoryAlbumCatalog(baseFolder)
-	if err := albumCatalog.Generate(baseFolder); err != nil {
-		log.Println("Error generating album catalog: ", err)
-		os.Exit(1)
-	}
-
-	discographyScrapper := scrapper.NewDiscographyScrapper(retrieverClient, parseClient, saveClient, albumCatalog)
-	albumScrapper := scrapper.NewAlbumScrapper(retrieverClient, parseClient, saveClient, albumCatalog)
-	trackScrapper := scrapper.NewTrackScrapper(retrieverClient, parseClient, saveClient, albumCatalog)
+	discographyScrapper := scrapper.NewDiscographyScrapper(config.Retriever, config.Parser, config.Saver, config.AlbumCatalog)
+	albumScrapper := scrapper.NewAlbumScrapper(config.Retriever, config.Parser, config.Saver, config.AlbumCatalog)
+	trackScrapper := scrapper.NewTrackScrapper(config.Retriever, config.Parser, config.Saver, config.AlbumCatalog)
 
 	return handler.NewHttpHandler(
-		baseFolder,
+		config.BaseFolder,
 		discographyScrapper,
 		albumScrapper,
 		trackScrapper,

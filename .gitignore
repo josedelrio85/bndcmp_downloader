@@ -2,3 +2,4 @@ downloads
 *.txt
 bndcmp_downloader
 .DS_Store
+.env
