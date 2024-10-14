@@ -3,12 +3,12 @@ package main
 import (
 	"log"
 
+	"github.com/josedelrio85/bndcmp_downloader/internal/album_catalog"
 	"github.com/josedelrio85/bndcmp_downloader/internal/parser"
 	"github.com/josedelrio85/bndcmp_downloader/internal/prompt"
 	"github.com/josedelrio85/bndcmp_downloader/internal/retriever"
 	"github.com/josedelrio85/bndcmp_downloader/internal/saver"
 	"github.com/josedelrio85/bndcmp_downloader/internal/scrapper"
-	"github.com/josedelrio85/bndcmp_downloader/internal/util"
 )
 
 func main() {
@@ -18,16 +18,19 @@ func main() {
 
 	httpClient, parseClient, saveClient := setup(&promptChain.ChainMessage.StorageType)
 
-	util.RecursivelyListDirectory(promptChain.ChainMessage.StorageType)
+	inMemoryAlbumCatalog := album_catalog.NewInMemoryAlbumCatalog(promptChain.ChainMessage.StorageType)
+	if err := inMemoryAlbumCatalog.Generate(); err != nil {
+		log.Println("Error generating album catalog: ", err)
+	}
 
 	var err error
 	switch promptChain.ChainMessage.ScrapType {
 	case scrapper.Track:
-		err = scrapper.NewTrackScrapper(promptChain.ChainMessage.URL.Value, httpClient, parseClient, saveClient, &util.MapDir).Execute()
+		err = scrapper.NewTrackScrapper(promptChain.ChainMessage.URL.Value, httpClient, parseClient, saveClient, &inMemoryAlbumCatalog.MapDir).Execute()
 	case scrapper.Album:
-		err = scrapper.NewAlbumScrapper(promptChain.ChainMessage.URL.URL, httpClient, parseClient, saveClient, &util.MapDir).Execute()
+		err = scrapper.NewAlbumScrapper(promptChain.ChainMessage.URL.URL, httpClient, parseClient, saveClient, &inMemoryAlbumCatalog.MapDir).Execute()
 	case scrapper.Discography:
-		err = scrapper.NewDiscographyScrapper(promptChain.ChainMessage.URL.URL, httpClient, parseClient, saveClient, &util.MapDir).Execute()
+		err = scrapper.NewDiscographyScrapper(promptChain.ChainMessage.URL.URL, httpClient, parseClient, saveClient, &inMemoryAlbumCatalog.MapDir).Execute()
 	default:
 		log.Println("Invalid scrap type")
 	}
