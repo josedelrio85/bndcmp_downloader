@@ -5,30 +5,30 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/url"
 	"strings"
 
+	"github.com/josedelrio85/bndcmp_downloader/internal/album_catalog"
 	"github.com/josedelrio85/bndcmp_downloader/internal/bandcamp"
 	"github.com/josedelrio85/bndcmp_downloader/internal/model"
 	"golang.org/x/net/html"
 )
 
 type TrackScrapper struct {
-	URL              string
-	Track            *model.Track
-	httpClient       Retriever
-	parseClient      Parser
-	saveClient       Saver
-	downloadedTracks *map[string]bool
+	Track        *model.Track
+	httpClient   Retriever
+	parseClient  Parser
+	saveClient   Saver
+	albumCatalog album_catalog.AlbumCatalog
 }
 
-func NewTrackScrapper(URL string, httpClient Retriever, parseClient Parser, saveClient Saver, downloadedTracks *map[string]bool) *TrackScrapper {
+func NewTrackScrapper(httpClient Retriever, parseClient Parser, saveClient Saver, albumCatalog album_catalog.AlbumCatalog) *TrackScrapper {
 	return &TrackScrapper{
-		URL:              URL,
-		Track:            &model.Track{},
-		httpClient:       httpClient,
-		parseClient:      parseClient,
-		saveClient:       saveClient,
-		downloadedTracks: downloadedTracks,
+		Track:        &model.Track{},
+		httpClient:   httpClient,
+		parseClient:  parseClient,
+		saveClient:   saveClient,
+		albumCatalog: albumCatalog,
 	}
 }
 
@@ -66,11 +66,11 @@ func (t *TrackScrapper) Save(data io.Reader, track *model.Track) error {
 	return t.saveClient.Save(data, track)
 }
 
-func (t *TrackScrapper) Execute() error {
-	log.Printf("Starting track scrapper for URL: %s", t.URL)
-	reader, err := t.Retrieve(t.URL)
+func (t *TrackScrapper) Execute(trackURL *url.URL) error {
+	log.Printf("Starting track scrapper for URL: %s", trackURL.String())
+	reader, err := t.Retrieve(trackURL.String())
 	if err != nil {
-		log.Printf("Error retrieving URL %s: %v", t.URL, err)
+		log.Printf("Error retrieving URL %s: %v", trackURL.String(), err)
 		return err
 	}
 
@@ -102,6 +102,8 @@ func (t *TrackScrapper) Execute() error {
 				log.Printf("Error saving track %s: %v", t.Track.Title, err)
 				return err
 			}
+
+			t.updateDownloadedTracks()
 		}
 	}
 
@@ -109,9 +111,10 @@ func (t *TrackScrapper) Execute() error {
 }
 
 func (t *TrackScrapper) isDownloaded() bool {
-	if t.downloadedTracks != nil {
+	mapDir := t.albumCatalog.GetMapDir()
+	if mapDir != nil {
 		filePath := t.generateFilePath()
-		if _, ok := (*t.downloadedTracks)[filePath]; ok {
+		if _, ok := (*mapDir)[filePath]; ok {
 			log.Printf("Track %s already downloaded", filePath)
 			return true
 		}
@@ -125,4 +128,11 @@ func (t *TrackScrapper) generateFilePath() string {
 		return strings.Join([]string{t.Track.Artist, trackName}, "/")
 	}
 	return strings.Join([]string{t.Track.Artist, *t.Track.Album, trackName}, "/")
+}
+
+func (t *TrackScrapper) updateDownloadedTracks() {
+	if t.albumCatalog.GetMapDir() != nil {
+		filePath := t.generateFilePath()
+		t.albumCatalog.Update(filePath)
+	}
 }

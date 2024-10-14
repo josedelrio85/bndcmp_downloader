@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	gomock "github.com/golang/mock/gomock"
+	"github.com/josedelrio85/bndcmp_downloader/internal/album_catalog"
+	"github.com/josedelrio85/bndcmp_downloader/internal/model"
 	"github.com/stretchr/testify/suite"
 	html "golang.org/x/net/html"
 )
@@ -25,7 +27,7 @@ type mockTrackScrapper struct {
 	URL          string
 }
 
-func (m *mockTrackScrapper) Execute() error {
+func (m *mockTrackScrapper) Execute(url *url.URL) error {
 	m.ExecuteCalls++
 	return m.ExecuteFunc()
 }
@@ -38,6 +40,7 @@ type TestalbumScrapperSuite struct {
 	mockSaveClient  *MockSaver
 	albumURL        *url.URL
 	albumScrapper   *AlbumScrapper
+	albumCatalog    *album_catalog.MockAlbumCatalog
 }
 
 func (s *TestalbumScrapperSuite) SetupTest() {
@@ -50,8 +53,8 @@ func (s *TestalbumScrapperSuite) SetupTest() {
 		Host:   "kinggizzard.bandcamp.com",
 		Path:   "/album/12-bar-bruise",
 	}
-	downloadedTracks := make(map[string]bool)
-	s.albumScrapper = NewAlbumScrapper(s.albumURL, s.mockHttpClient, s.mockParseClient, s.mockSaveClient, &downloadedTracks)
+	s.albumCatalog = album_catalog.NewMockAlbumCatalog(s.controller)
+	s.albumScrapper = NewAlbumScrapper(s.mockHttpClient, s.mockParseClient, s.mockSaveClient, s.albumCatalog)
 }
 
 func (s *TestalbumScrapperSuite) TearDownTest() {
@@ -237,9 +240,8 @@ func (s *TestalbumScrapperSuite) TestFind_Error() {
 
 func (s *TestalbumScrapperSuite) TestSave() {
 	mockReader := bytes.NewReader([]byte("mock response data"))
-	filename := "foobar.txt"
 
-	err := s.albumScrapper.Save(mockReader, filename)
+	err := s.albumScrapper.Save(mockReader, &model.Track{})
 	s.NoError(err)
 }
 
@@ -249,8 +251,7 @@ func (s *TestalbumScrapperSuite) TestExecute_Success() {
 			return nil
 		},
 	}
-	s.albumScrapper.executeClient = func(url string, httpClient Retriever, parseClient Parser, saveClient Saver, downloadedTracks *map[string]bool) Executer {
-		mockExecuteClient.URL = url
+	s.albumScrapper.executeClient = func(httpClient Retriever, parseClient Parser, saveClient Saver, albumCatalog album_catalog.AlbumCatalog) Executer {
 		return mockExecuteClient
 	}
 
@@ -260,7 +261,7 @@ func (s *TestalbumScrapperSuite) TestExecute_Success() {
 	mockNode, _ := html.Parse(bytes.NewReader([]byte(validAlbumExample)))
 	s.mockParseClient.EXPECT().Parse(mockReader).Return(mockNode, nil)
 
-	err := s.albumScrapper.Execute()
+	err := s.albumScrapper.Execute(s.albumURL)
 
 	s.NoError(err)
 	s.Equal(len(s.albumScrapper.TrackList), mockExecuteClient.ExecuteCalls)
@@ -270,7 +271,7 @@ func (s *TestalbumScrapperSuite) TestExecute_RetrieveError() {
 	mockError := errors.New("retrieve error")
 	s.mockHttpClient.EXPECT().Retrieve(s.albumURL.String()).Return(nil, mockError)
 
-	err := s.albumScrapper.Execute()
+	err := s.albumScrapper.Execute(s.albumURL)
 
 	s.Error(err)
 	s.Equal(mockError, err)
@@ -283,7 +284,7 @@ func (s *TestalbumScrapperSuite) TestExecute_ParseError() {
 	mockError := errors.New("parse error")
 	s.mockParseClient.EXPECT().Parse(mockReader).Return(nil, mockError)
 
-	err := s.albumScrapper.Execute()
+	err := s.albumScrapper.Execute(s.albumURL)
 
 	s.Error(err)
 	s.Equal(mockError, err)
@@ -296,7 +297,7 @@ func (s *TestalbumScrapperSuite) TestExecute_FindError() {
 	mockNode, _ := html.Parse(mockReader)
 	s.mockParseClient.EXPECT().Parse(mockReader).Return(mockNode, nil)
 
-	err := s.albumScrapper.Execute()
+	err := s.albumScrapper.Execute(s.albumURL)
 
 	s.NoError(err)
 	s.Equal(0, len(s.albumScrapper.TrackList))
@@ -310,8 +311,7 @@ func (s *TestalbumScrapperSuite) TestExecute_SaveError() {
 			return mockedError
 		},
 	}
-	s.albumScrapper.executeClient = func(url string, httpClient Retriever, parseClient Parser, saveClient Saver, downloadedTracks *map[string]bool) Executer {
-		mockExecuteClient.URL = url
+	s.albumScrapper.executeClient = func(httpClient Retriever, parseClient Parser, saveClient Saver, albumCatalog album_catalog.AlbumCatalog) Executer {
 		return mockExecuteClient
 	}
 
@@ -321,7 +321,7 @@ func (s *TestalbumScrapperSuite) TestExecute_SaveError() {
 	mockNode, _ := html.Parse(mockReader)
 	s.mockParseClient.EXPECT().Parse(mockReader).Return(mockNode, nil)
 
-	err := s.albumScrapper.Execute()
+	err := s.albumScrapper.Execute(s.albumURL)
 
 	s.Error(err)
 	s.Equal(mockedError, err)

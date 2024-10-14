@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	gomock "github.com/golang/mock/gomock"
+	"github.com/josedelrio85/bndcmp_downloader/internal/album_catalog"
+	model "github.com/josedelrio85/bndcmp_downloader/internal/model"
 	"github.com/stretchr/testify/suite"
 	html "golang.org/x/net/html"
 )
@@ -25,7 +27,7 @@ type mockAlbumScrapper struct {
 	URL          *url.URL
 }
 
-func (m *mockAlbumScrapper) Execute() error {
+func (m *mockAlbumScrapper) Execute(url *url.URL) error {
 	m.ExecuteCalls++
 	return m.ExecuteFunc()
 }
@@ -38,6 +40,7 @@ type TestDiscographyScrapperSuite struct {
 	mockSaveClient      *MockSaver
 	discographyURL      *url.URL
 	DiscographyScrapper *DiscographyScrapper
+	albumCatalog        *album_catalog.MockAlbumCatalog
 }
 
 func (s *TestDiscographyScrapperSuite) SetupTest() {
@@ -50,8 +53,8 @@ func (s *TestDiscographyScrapperSuite) SetupTest() {
 		Host:   "kinggizzard.bandcamp.com",
 		Path:   "/music",
 	}
-	downloadedTracks := make(map[string]bool)
-	s.DiscographyScrapper = NewDiscographyScrapper(s.discographyURL, s.mockHttpClient, s.mockParseClient, s.mockSaveClient, &downloadedTracks)
+	s.albumCatalog = album_catalog.NewMockAlbumCatalog(s.controller)
+	s.DiscographyScrapper = NewDiscographyScrapper(s.mockHttpClient, s.mockParseClient, s.mockSaveClient, s.albumCatalog)
 }
 
 func (s *TestDiscographyScrapperSuite) TearDownTest() {
@@ -211,9 +214,8 @@ func (s *TestDiscographyScrapperSuite) TestFind_Error() {
 
 func (s *TestDiscographyScrapperSuite) TestSave() {
 	mockReader := bytes.NewReader([]byte("mock response data"))
-	filename := "foobar.txt"
 
-	err := s.DiscographyScrapper.Save(mockReader, filename)
+	err := s.DiscographyScrapper.Save(mockReader, &model.Track{})
 	s.NoError(err)
 }
 
@@ -223,8 +225,7 @@ func (s *TestDiscographyScrapperSuite) TestExecute_Success() {
 			return nil
 		},
 	}
-	s.DiscographyScrapper.executeClient = func(discographyURL *url.URL, httpClient Retriever, parseClient Parser, saveClient Saver, downloadedTracks *map[string]bool) Executer {
-		mockExecuteClient.URL = discographyURL
+	s.DiscographyScrapper.executeClient = func(httpClient Retriever, parseClient Parser, saveClient Saver, albumCatalog album_catalog.AlbumCatalog) Executer {
 		return mockExecuteClient
 	}
 
@@ -234,7 +235,7 @@ func (s *TestDiscographyScrapperSuite) TestExecute_Success() {
 	mockNode, _ := html.Parse(bytes.NewReader([]byte(validDiscographyExample)))
 	s.mockParseClient.EXPECT().Parse(mockReader).Return(mockNode, nil)
 
-	err := s.DiscographyScrapper.Execute()
+	err := s.DiscographyScrapper.Execute(s.discographyURL)
 
 	s.NoError(err)
 	s.Equal(len(s.DiscographyScrapper.AlbumList), mockExecuteClient.ExecuteCalls)
@@ -244,7 +245,7 @@ func (s *TestDiscographyScrapperSuite) TestExecute_RetrieveError() {
 	mockError := errors.New("retrieve error")
 	s.mockHttpClient.EXPECT().Retrieve(s.discographyURL.String()).Return(nil, mockError)
 
-	err := s.DiscographyScrapper.Execute()
+	err := s.DiscographyScrapper.Execute(s.discographyURL)
 
 	s.Error(err)
 	s.Equal(mockError, err)
@@ -257,7 +258,7 @@ func (s *TestDiscographyScrapperSuite) TestExecute_ParseError() {
 	mockError := errors.New("parse error")
 	s.mockParseClient.EXPECT().Parse(mockReader).Return(nil, mockError)
 
-	err := s.DiscographyScrapper.Execute()
+	err := s.DiscographyScrapper.Execute(s.discographyURL)
 
 	s.Error(err)
 	s.Equal(mockError, err)
@@ -270,7 +271,7 @@ func (s *TestDiscographyScrapperSuite) TestExecute_FindError() {
 	mockNode, _ := html.Parse(mockReader)
 	s.mockParseClient.EXPECT().Parse(mockReader).Return(mockNode, nil)
 
-	err := s.DiscographyScrapper.Execute()
+	err := s.DiscographyScrapper.Execute(s.discographyURL)
 
 	s.NoError(err)
 	s.Equal(0, len(s.DiscographyScrapper.AlbumList))
@@ -284,8 +285,7 @@ func (s *TestDiscographyScrapperSuite) TestExecute_SaveError() {
 			return mockedError
 		},
 	}
-	s.DiscographyScrapper.executeClient = func(discographyURL *url.URL, httpClient Retriever, parseClient Parser, saveClient Saver, downloadedTracks *map[string]bool) Executer {
-		mockExecuteClient.URL = discographyURL
+	s.DiscographyScrapper.executeClient = func(httpClient Retriever, parseClient Parser, saveClient Saver, albumCatalog album_catalog.AlbumCatalog) Executer {
 		return mockExecuteClient
 	}
 
@@ -295,7 +295,7 @@ func (s *TestDiscographyScrapperSuite) TestExecute_SaveError() {
 	mockNode, _ := html.Parse(mockReader)
 	s.mockParseClient.EXPECT().Parse(mockReader).Return(mockNode, nil)
 
-	err := s.DiscographyScrapper.Execute()
+	err := s.DiscographyScrapper.Execute(s.discographyURL)
 
 	s.Error(err)
 	s.Equal(mockedError, err)

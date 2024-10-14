@@ -6,6 +6,7 @@ package scrapper
 
 import (
 	io "io"
+	url "net/url"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -37,17 +38,17 @@ func (m *MockScrapper) EXPECT() *MockScrapperMockRecorder {
 }
 
 // Execute mocks base method.
-func (m *MockScrapper) Execute() error {
+func (m *MockScrapper) Execute(resourceURL *url.URL) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Execute")
+	ret := m.ctrl.Call(m, "Execute", resourceURL)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Execute indicates an expected call of Execute.
-func (mr *MockScrapperMockRecorder) Execute() *gomock.Call {
+func (mr *MockScrapperMockRecorder) Execute(resourceURL interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Execute", reflect.TypeOf((*MockScrapper)(nil).Execute))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Execute", reflect.TypeOf((*MockScrapper)(nil).Execute), resourceURL)
 }
 
 // Find mocks base method.
@@ -282,15 +283,15 @@ func (m *MockExecuter) EXPECT() *MockExecuterMockRecorder {
 }
 
 // Execute mocks base method.
-func (m *MockExecuter) Execute() error {
+func (m *MockExecuter) Execute(resourceURL *url.URL) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Execute")
+	ret := m.ctrl.Call(m, "Execute", resourceURL)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Execute indicates an expected call of Execute.
-func (mr *MockExecuterMockRecorder) Execute() *gomock.Call {
+func (mr *MockExecuterMockRecorder) Execute(resourceURL interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Execute", reflect.TypeOf((*MockExecuter)(nil).Execute))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Execute", reflect.TypeOf((*MockExecuter)(nil).Execute), resourceURL)
 }

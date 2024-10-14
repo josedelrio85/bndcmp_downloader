@@ -5,9 +5,11 @@ import (
 	_ "embed"
 	"encoding/json"
 	"errors"
+	"net/url"
 	"testing"
 
 	gomock "github.com/golang/mock/gomock"
+	"github.com/josedelrio85/bndcmp_downloader/internal/album_catalog"
 	"github.com/josedelrio85/bndcmp_downloader/internal/bandcamp"
 	"github.com/josedelrio85/bndcmp_downloader/internal/model"
 	"github.com/stretchr/testify/suite"
@@ -33,8 +35,9 @@ type TestTrackScrapperSuite struct {
 	mockHttpClient  *MockRetriever
 	mockParseClient *MockParser
 	mockSaveClient  *MockSaver
-	trackURL        string
+	trackURL        *url.URL
 	trackScrapper   *TrackScrapper
+	albumCatalog    *album_catalog.MockAlbumCatalog
 }
 
 func (s *TestTrackScrapperSuite) SetupTest() {
@@ -42,9 +45,11 @@ func (s *TestTrackScrapperSuite) SetupTest() {
 	s.mockHttpClient = NewMockRetriever(s.controller)
 	s.mockParseClient = NewMockParser(s.controller)
 	s.mockSaveClient = NewMockSaver(s.controller)
-	s.trackURL = "https://kinggizzard.bandcamp.com/track/elbow"
-	downloadedTracks := make(map[string]bool)
-	s.trackScrapper = NewTrackScrapper(s.trackURL, s.mockHttpClient, s.mockParseClient, s.mockSaveClient, &downloadedTracks)
+	trackURL, err := url.Parse("https://kinggizzard.bandcamp.com/track/elbow")
+	s.NoError(err)
+	s.trackURL = trackURL
+	s.albumCatalog = album_catalog.NewMockAlbumCatalog(s.controller)
+	s.trackScrapper = NewTrackScrapper(s.mockHttpClient, s.mockParseClient, s.mockSaveClient, s.albumCatalog)
 }
 
 func (s *TestTrackScrapperSuite) TearDownTest() {
@@ -53,9 +58,9 @@ func (s *TestTrackScrapperSuite) TearDownTest() {
 
 func (s *TestTrackScrapperSuite) TestRetrieve_Success() {
 	mockResponse := []byte("mock response data")
-	s.mockHttpClient.EXPECT().Retrieve(s.trackURL).Return(bytes.NewReader(mockResponse), nil)
+	s.mockHttpClient.EXPECT().Retrieve(s.trackURL.String()).Return(bytes.NewReader(mockResponse), nil)
 
-	reader, err := s.trackScrapper.Retrieve(s.trackURL)
+	reader, err := s.trackScrapper.Retrieve(s.trackURL.String())
 
 	s.NoError(err)
 	s.NotNil(reader)
@@ -63,9 +68,9 @@ func (s *TestTrackScrapperSuite) TestRetrieve_Success() {
 
 func (s *TestTrackScrapperSuite) TestRetrieve_Error() {
 	expectedError := errors.New("failed to retrieve track")
-	s.mockHttpClient.EXPECT().Retrieve(s.trackURL).Return(nil, expectedError)
+	s.mockHttpClient.EXPECT().Retrieve(s.trackURL.String()).Return(nil, expectedError)
 
-	reader, err := s.trackScrapper.Retrieve(s.trackURL)
+	reader, err := s.trackScrapper.Retrieve(s.trackURL.String())
 
 	s.Error(err)
 	s.Equal(expectedError, err)
@@ -155,16 +160,21 @@ func (s *TestTrackScrapperSuite) TestExecute_Success() {
 	downloadURL := trAlbum.Trackinfo[0].File.Mp3128
 
 	mockReader := bytes.NewReader([]byte(validExample))
-	s.mockHttpClient.EXPECT().Retrieve(s.trackURL).Return(mockReader, nil)
+	s.mockHttpClient.EXPECT().Retrieve(s.trackURL.String()).Return(mockReader, nil)
 
 	mockNode, _ := html.Parse(bytes.NewReader([]byte(validExample)))
 	s.mockParseClient.EXPECT().Parse(mockReader).Return(mockNode, nil)
 
+	expectedMapDir := make(map[string]bool)
+	s.albumCatalog.EXPECT().GetMapDir().Return(&expectedMapDir).Times(2)
+
 	mockMP3Reader := bytes.NewReader([]byte("mock mp3 data"))
 	s.mockHttpClient.EXPECT().Retrieve(downloadURL).Return(mockMP3Reader, nil)
-	s.mockSaveClient.EXPECT().Save(mockMP3Reader, trAlbum.ToTrack()).Return(nil)
+	s.trackScrapper.Track = trAlbum.ToTrack()
+	s.mockSaveClient.EXPECT().Save(mockMP3Reader, s.trackScrapper.Track).Return(nil)
+	s.albumCatalog.EXPECT().Update(s.trackScrapper.generateFilePath()).Return()
 
-	err = s.trackScrapper.Execute()
+	err = s.trackScrapper.Execute(s.trackURL)
 
 	s.NoError(err)
 	s.Equal("Elbow", s.trackScrapper.Track.Title)
@@ -173,45 +183,36 @@ func (s *TestTrackScrapperSuite) TestExecute_Success() {
 }
 
 func (s *TestTrackScrapperSuite) TestExecute_RetrieveError() {
-	mockURL := "https://example.com/track"
-	s.trackScrapper.URL = mockURL
-
 	mockError := errors.New("retrieve error")
-	s.mockHttpClient.EXPECT().Retrieve(mockURL).Return(nil, mockError)
+	s.mockHttpClient.EXPECT().Retrieve(s.trackURL.String()).Return(nil, mockError)
 
-	err := s.trackScrapper.Execute()
+	err := s.trackScrapper.Execute(s.trackURL)
 
 	s.Error(err)
 	s.Equal(mockError, err)
 }
 
 func (s *TestTrackScrapperSuite) TestExecute_ParseError() {
-	mockURL := "https://example.com/track"
-	s.trackScrapper.URL = mockURL
-
 	mockReader := bytes.NewReader([]byte(validExample))
-	s.mockHttpClient.EXPECT().Retrieve(mockURL).Return(mockReader, nil)
+	s.mockHttpClient.EXPECT().Retrieve(s.trackURL.String()).Return(mockReader, nil)
 
 	mockError := errors.New("parse error")
 	s.mockParseClient.EXPECT().Parse(mockReader).Return(nil, mockError)
 
-	err := s.trackScrapper.Execute()
+	err := s.trackScrapper.Execute(s.trackURL)
 
 	s.Error(err)
 	s.Equal(mockError, err)
 }
 
 func (s *TestTrackScrapperSuite) TestExecute_FindError() {
-	mockURL := "https://example.com/track"
-	s.trackScrapper.URL = mockURL
-
 	mockReader := bytes.NewReader([]byte(invalidExample))
-	s.mockHttpClient.EXPECT().Retrieve(mockURL).Return(mockReader, nil)
+	s.mockHttpClient.EXPECT().Retrieve(s.trackURL.String()).Return(mockReader, nil)
 
 	mockNode, _ := html.Parse(mockReader)
 	s.mockParseClient.EXPECT().Parse(mockReader).Return(mockNode, nil)
 
-	err := s.trackScrapper.Execute()
+	err := s.trackScrapper.Execute(s.trackURL)
 
 	s.Error(err)
 	s.Contains(err.Error(), "invalid character")
@@ -224,21 +225,24 @@ func (s *TestTrackScrapperSuite) TestExecute_SaveError() {
 		s.T().Fatal(err)
 	}
 	downloadURL := trAlbum.Trackinfo[0].File.Mp3128
+	s.trackScrapper.Track = trAlbum.ToTrack()
 
 	mockReader := bytes.NewReader([]byte(validExample))
-	s.mockHttpClient.EXPECT().Retrieve(s.trackURL).Return(mockReader, nil)
+	s.mockHttpClient.EXPECT().Retrieve(s.trackURL.String()).Return(mockReader, nil)
 
 	mockNode, _ := html.Parse(mockReader)
 	s.mockParseClient.EXPECT().Parse(mockReader).Return(mockNode, nil)
+
+	expectedMapDir := make(map[string]bool)
+	s.albumCatalog.EXPECT().GetMapDir().Return(&expectedMapDir)
 
 	mockMP3Reader := bytes.NewReader([]byte("mock mp3 data"))
 	s.mockHttpClient.EXPECT().Retrieve(downloadURL).Return(mockMP3Reader, nil)
 
 	mockError := errors.New("save error")
-	s.trackScrapper.Track = trAlbum.ToTrack()
 	s.mockSaveClient.EXPECT().Save(mockMP3Reader, s.trackScrapper.Track).Return(mockError)
 
-	err = s.trackScrapper.Execute()
+	err = s.trackScrapper.Execute(s.trackURL)
 
 	s.Error(err)
 	s.Equal(mockError, err)
@@ -276,7 +280,8 @@ func (s *TestTrackScrapperSuite) TestFind_InvalidJSON() {
 
 func (s *TestTrackScrapperSuite) TestIsDownloaded_True() {
 	filePath := "Artist/Album/01 - Track.mp3"
-	(*s.trackScrapper.downloadedTracks)[filePath] = true
+	expectedMapDir := map[string]bool{filePath: true}
+	s.albumCatalog.EXPECT().GetMapDir().Return(&expectedMapDir)
 	s.trackScrapper.Track = &model.Track{
 		Artist:      "Artist",
 		Album:       toPointer("Album"),
@@ -290,6 +295,9 @@ func (s *TestTrackScrapperSuite) TestIsDownloaded_True() {
 }
 
 func (s *TestTrackScrapperSuite) TestIsDownloaded_False() {
+	expectedMapDir := make(map[string]bool)
+	s.albumCatalog.EXPECT().GetMapDir().Return(&expectedMapDir)
+
 	s.trackScrapper.Track = &model.Track{
 		Artist:      "Artist",
 		Album:       toPointer("Album"),
@@ -327,6 +335,34 @@ func (s *TestTrackScrapperSuite) TestGenerateFilePath_WithoutAlbum() {
 	s.Equal("Artist/01 - Track.mp3", result)
 }
 
+/*
+	func (s *TestTrackScrapperSuite) TestUpdateDownloadedTracks() {
+		// Initialize the downloadedTracks map
+		// s.trackScrapper.albumCatalog.GetMapDir() = &map[string]bool{}
+
+		// Set up the Track
+		s.trackScrapper.Track = &model.Track{
+			Artist:      "Artist",
+			Album:       toPointer("Album"),
+			Title:       "Track",
+			TrackNumber: 1,
+		}
+
+		// Call the method
+		s.trackScrapper.updateDownloadedTracks()
+
+		// Check if the track was added to the map
+		expectedPath := "Artist/Album/01 - Track.mp3"
+		_, exists := (*&s.trackScrapper.albumCatalog.GetMapDir())[expectedPath]
+		s.True(exists, "The track should be marked as downloaded")
+
+		// Verify the value is set to true
+		s.True((*s.trackScrapper.downloadedTracks)[expectedPath], "The value for the track should be true")
+
+		// Check the length of the map
+		s.Equal(1, len(*s.trackScrapper.downloadedTracks), "The map should contain exactly one entry")
+	}
+*/
 func toPointer(s string) *string {
 	return &s
 }

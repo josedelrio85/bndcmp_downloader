@@ -7,30 +7,30 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/josedelrio85/bndcmp_downloader/internal/album_catalog"
+	"github.com/josedelrio85/bndcmp_downloader/internal/model"
 	html "golang.org/x/net/html"
 )
 
 type AlbumScrapper struct {
-	URL              *url.URL
-	TrackList        []string
-	httpClient       Retriever
-	parseClient      Parser
-	saveClient       Saver
-	executeClient    func(string, Retriever, Parser, Saver, *map[string]bool) Executer
-	downloadedTracks *map[string]bool
+	TrackList     []string
+	httpClient    Retriever
+	parseClient   Parser
+	saveClient    Saver
+	executeClient func(Retriever, Parser, Saver, album_catalog.AlbumCatalog) Executer
+	albumCatalog  album_catalog.AlbumCatalog
 }
 
-func NewAlbumScrapper(url *url.URL, httpClient Retriever, parseClient Parser, saveClient Saver, downloadedTracks *map[string]bool) *AlbumScrapper {
+func NewAlbumScrapper(httpClient Retriever, parseClient Parser, saveClient Saver, albumCatalog album_catalog.AlbumCatalog) *AlbumScrapper {
 	return &AlbumScrapper{
-		URL:         url,
 		TrackList:   []string{},
 		httpClient:  httpClient,
 		parseClient: parseClient,
 		saveClient:  saveClient,
-		executeClient: func(url string, httpClient Retriever, parseClient Parser, saveClient Saver, downloadedTracks *map[string]bool) Executer {
-			return NewTrackScrapper(url, httpClient, parseClient, saveClient, downloadedTracks)
+		executeClient: func(httpClient Retriever, parseClient Parser, saveClient Saver, albumCatalog album_catalog.AlbumCatalog) Executer {
+			return NewTrackScrapper(httpClient, parseClient, saveClient, albumCatalog)
 		},
-		downloadedTracks: downloadedTracks,
+		albumCatalog: albumCatalog,
 	}
 }
 
@@ -82,13 +82,13 @@ func (a *AlbumScrapper) processTrackList() []string {
 	return result
 }
 
-func (a *AlbumScrapper) Save(data io.Reader, filename string) error {
+func (a *AlbumScrapper) Save(data io.Reader, track *model.Track) error {
 	return nil
 }
 
-func (a *AlbumScrapper) Execute() error {
-	log.Println("Scrapping album at:", a.URL.String())
-	reader, err := a.Retrieve(a.URL.String())
+func (a *AlbumScrapper) Execute(albumURL *url.URL) error {
+	log.Println("Scrapping album at:", albumURL.String())
+	reader, err := a.Retrieve(albumURL.String())
 	if err != nil {
 		log.Println("Error retrieving album:", err)
 		return err
@@ -107,15 +107,15 @@ func (a *AlbumScrapper) Execute() error {
 	}
 
 	baseURL := url.URL{
-		Scheme: a.URL.Scheme,
-		Host:   a.URL.Host,
+		Scheme: albumURL.Scheme,
+		Host:   albumURL.Host,
 	}
 	log.Printf("%d tracks to download \n", len(a.TrackList))
 	for _, track := range a.TrackList {
 		trackURL := baseURL.ResolveReference(&url.URL{Path: track})
 		log.Println("Retrieving track:", trackURL.String())
-		trackScrapper := a.executeClient(trackURL.String(), a.httpClient, a.parseClient, a.saveClient, a.downloadedTracks)
-		if err := trackScrapper.Execute(); err != nil {
+		trackScrapper := a.executeClient(a.httpClient, a.parseClient, a.saveClient, a.albumCatalog)
+		if err := trackScrapper.Execute(trackURL); err != nil {
 			log.Println("Error executing track scrapper:", err)
 			return err
 		}

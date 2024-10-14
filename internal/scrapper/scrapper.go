@@ -2,6 +2,7 @@ package scrapper
 
 import (
 	"io"
+	"net/url"
 
 	"github.com/josedelrio85/bndcmp_downloader/internal/model"
 	"golang.org/x/net/html"
@@ -33,5 +34,5 @@ type Saver interface {
 }
 
 type Executer interface {
-	Execute() error
+	Execute(resourceURL *url.URL) error
 }
