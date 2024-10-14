@@ -4,44 +4,63 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
+	"sync"
 )
 
+//go:generate mockgen -source=$GOFILE -package=$GOPACKAGE -destination=mock_$GOFILE
 type AlbumCatalog interface {
-	Generate() error
+	Generate(folder string) error
+	GetMapDir() *map[string]bool
+	Update(path string)
 }
 
 type InMemoryAlbumCatalog struct {
-	MapDir     map[string]bool
+	mapDir     map[string]bool
 	baseFolder string
+	mutex      sync.Mutex
 }
 
 func NewInMemoryAlbumCatalog(baseFolder string) *InMemoryAlbumCatalog {
 	return &InMemoryAlbumCatalog{
-		MapDir:     make(map[string]bool),
+		mapDir:     make(map[string]bool),
 		baseFolder: baseFolder,
+		mutex:      sync.Mutex{},
 	}
 }
 
-func (i *InMemoryAlbumCatalog) Generate() error {
-	entries, err := os.ReadDir(i.baseFolder)
+func (i *InMemoryAlbumCatalog) Generate(folder string) error {
+	if i.baseFolder == "" {
+		i.baseFolder = folder
+	}
+	entries, err := os.ReadDir(folder)
 	if err != nil {
-		log.Println("error iterating over folder: ", err)
+		log.Printf("error iterating over folder: %s: %v\n", folder, err)
 		return err
 	}
 
 	for _, entry := range entries {
-		completePath := filepath.Join(i.baseFolder, entry.Name())
-		relativePath, err := filepath.Rel(i.baseFolder, completePath)
-		if err != nil {
-			log.Println("error getting relative path:", err)
-			return err
-		}
-		i.MapDir[relativePath] = true
 		if entry.IsDir() {
-			i.baseFolder = completePath
-			i.Generate()
+			next := filepath.Join(folder, entry.Name())
+			i.Generate(next)
+		} else {
+			i.mutex.Lock()
+			nextTrack := filepath.Join(folder, entry.Name())
+			nextTrack = strings.TrimPrefix(nextTrack, i.baseFolder)
+			nextTrack = strings.TrimPrefix(nextTrack, string(os.PathSeparator))
+			i.mapDir[nextTrack] = true
+			i.mutex.Unlock()
 		}
 	}
-
 	return nil
+}
+
+func (i *InMemoryAlbumCatalog) GetMapDir() *map[string]bool {
+	return &i.mapDir
+}
+
+func (i *InMemoryAlbumCatalog) Update(path string) {
+	i.mutex.Lock()
+	i.mapDir[path] = true
+	i.mutex.Unlock()
 }
