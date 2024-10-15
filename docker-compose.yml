@@ -6,6 +6,9 @@ services:
     container_name: bndcmp_downloader_ui
     ports:
       - "8080:80"
+    environment:
+      - VITE_API_BASE_URL=http://backend:8099
+      - VITE_ENVIRONMENT=prod
     depends_on:
       - backend
 

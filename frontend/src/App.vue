@@ -5,8 +5,11 @@
   const response = ref('')
   const isLoading = ref(false)
 
+  console.log(import.meta.env.VITE_ENVIRONMENT)
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
+
   const submitRequest = async () => {
-    const apiUrl = `http://localhost:8099/api/v1/scrapp?url=${encodeURIComponent(url.value)}`
+    const apiUrl = `${apiBaseUrl}/api/v1/scrapp?url=${encodeURIComponent(url.value)}`
 
     try {
       isLoading.value = true
@@ -27,10 +30,6 @@
       isLoading.value = false
     }
   }
-
-  const currentTimestamp = computed(() => {
-    return new Date().toLocaleString()
-  });
 </script>
 
 <template>
