@@ -10,17 +10,16 @@ COPY go.mod go.sum ./
 # Download the dependencies
 RUN go mod download
 
+WORKDIR /app
+
 # Copy the source code into the container
 COPY . .
 
 # Build the Go application
-RUN go build -o main .
-
-# Create a volume for the output files
-VOLUME /app/output
+RUN go build -o ./cmd/api/main ./cmd/api/main.go
 
 # Set the entry point to run the application
-ENTRYPOINT ["./main"]
+ENTRYPOINT ["./cmd/api/main"]
 
 # Command to run the application (can be overridden)
 CMD []

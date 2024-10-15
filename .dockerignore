@@ -1,0 +1,6 @@
+downloads
+.gitignore
+.DS_Store
+notes.txt
+.env.example
+cmd/cli/*
