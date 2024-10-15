@@ -60,7 +60,7 @@ func (h *HttpHandler) GetDiscography(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Request processed of " + artist + " downloaded successfully"))
+	w.Write([]byte("Discography of " + artist + " downloaded successfully"))
 }
 
 func (h *HttpHandler) GetAlbum(w http.ResponseWriter, r *http.Request) {
