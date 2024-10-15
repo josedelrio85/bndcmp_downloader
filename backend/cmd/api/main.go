@@ -8,6 +8,7 @@ import (
 	"github.com/josedelrio85/bndcmp_downloader/internal/handler"
 	"github.com/josedelrio85/bndcmp_downloader/internal/scrapper"
 	"github.com/josedelrio85/bndcmp_downloader/internal/setup"
+	"github.com/rs/cors"
 )
 
 func main() {
@@ -39,12 +40,19 @@ func setupHttpHHandler() *handler.HttpHandler {
 	)
 }
 
-func setupRouter(httpHandler *handler.HttpHandler) *mux.Router {
+func setupRouter(httpHandler *handler.HttpHandler) http.Handler {
 	r := mux.NewRouter()
 	apiV1 := r.PathPrefix("/api/v1").Subrouter()
 	apiV1.HandleFunc("/health", httpHandler.Health).Methods("GET")
-	apiV1.HandleFunc("/{artist}", httpHandler.GetDiscography).Methods("GET")
-	apiV1.HandleFunc("/{artist}/{album}", httpHandler.GetAlbum).Methods("GET")
-	apiV1.HandleFunc("/{artist}/track/{track}", httpHandler.GetTrack).Methods("GET")
-	return r
+	// apiV1.HandleFunc("/{artist}", httpHandler.GetDiscography).Methods("GET")
+	// apiV1.HandleFunc("/{artist}/{album}", httpHandler.GetAlbum).Methods("GET")
+	// apiV1.HandleFunc("/{artist}/track/{track}", httpHandler.GetTrack).Methods("GET")
+	apiV1.HandleFunc("/scrapp", httpHandler.Scrapp).Methods("GET")
+
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{"http://localhost:5173"}, // Add your frontend URL here
+		AllowedMethods: []string{"GET", "POST", "OPTIONS"},
+		AllowedHeaders: []string{"*"},
+	})
+	return c.Handler(r)
 }
