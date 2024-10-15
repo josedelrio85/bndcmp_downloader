@@ -114,6 +114,7 @@ func (t *TrackScrapper) isDownloaded() bool {
 	mapDir := t.albumCatalog.GetMapDir()
 	if mapDir != nil {
 		filePath := t.generateFilePath()
+		log.Printf("Checking if track %s is downloaded", filePath)
 		if _, ok := (*mapDir)[filePath]; ok {
 			log.Printf("Track %s already downloaded", filePath)
 			return true

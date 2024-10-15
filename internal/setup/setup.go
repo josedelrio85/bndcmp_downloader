@@ -36,7 +36,7 @@ func LoadConfig() *Config {
 		Retriever:    retriever.NewHttpClient(),
 		Parser:       parser.NewParseClient(),
 		Saver:        saver.NewLocalSaver(&baseFolder),
-		AlbumCatalog: album_catalog.NewInMemoryAlbumCatalog(baseFolder),
+		AlbumCatalog: albumCatalog,
 	}
 }
 

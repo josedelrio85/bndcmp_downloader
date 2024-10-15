@@ -35,17 +35,16 @@ func (i *InMemoryAlbumCatalog) Generate(folder string) error {
 	}
 	entries, err := os.ReadDir(folder)
 	if err != nil {
-		log.Printf("error iterating over folder: %s: %v\n", folder, err)
+		log.Printf("InMemoryAlbumCatalog -> Generate -> error iterating over folder: %s: %v\n", folder, err)
 		return err
 	}
 
 	for _, entry := range entries {
+		nextTrack := filepath.Join(folder, entry.Name())
 		if entry.IsDir() {
-			next := filepath.Join(folder, entry.Name())
-			i.Generate(next)
+			i.Generate(nextTrack)
 		} else {
 			i.mutex.Lock()
-			nextTrack := filepath.Join(folder, entry.Name())
 			nextTrack = strings.TrimPrefix(nextTrack, i.baseFolder)
 			nextTrack = strings.TrimPrefix(nextTrack, string(os.PathSeparator))
 			i.mapDir[nextTrack] = true
