@@ -5,8 +5,8 @@
   const response = ref('')
   const isLoading = ref(false)
 
-  console.log(import.meta.env.VITE_ENVIRONMENT)
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
+  // const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://bndcmp_downloader_api:8099"
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8099"
 
   const submitRequest = async () => {
     const apiUrl = `${apiBaseUrl}/api/v1/scrapp?url=${encodeURIComponent(url.value)}`
