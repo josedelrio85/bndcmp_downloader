@@ -50,7 +50,7 @@ func setupRouter(httpHandler *handler.HttpHandler) http.Handler {
 	apiV1.HandleFunc("/scrapp", httpHandler.Scrapp).Methods("GET")
 
 	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://localhost:5173", "http://localhost:8080"}, // Add your frontend URL here
+		AllowedOrigins: []string{"http://localhost:5173", "http://localhost:8080", "http://192.168.50.84:8080"},
 		AllowedMethods: []string{"GET", "POST", "OPTIONS"},
 		AllowedHeaders: []string{"*"},
 	})
