@@ -29,6 +29,6 @@ volumes:
     driver: local
     driver_opts:
       type: none
-      device: /Users/josedelrio/Downloads/bndcmp_downloader
+      device: /home/jose/Descargas/bndcmp_downloader
       o: bind
 
