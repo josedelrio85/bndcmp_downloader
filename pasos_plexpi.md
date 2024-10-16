@@ -29,6 +29,7 @@ docker run -d \
 -v bndcmp_downloader_volume:$BASE_FOLDER \
 -p 8099:8099 \
 --network bndcmp_downloader_network \
+--restart unless-stopped \
 bndcmp_downloader_api
 
 ## 6 - build frontend
@@ -37,4 +38,4 @@ docker build -t bndcmp_downloader_ui -f frontend/dockerfile ./frontend
 
 ## 7 - run frontend
 
-docker run -d --name ui -p 8080:80 --network bndcmp_downloader_network bndcmp_downloader_ui
+docker run -d --name ui -p 8080:80 --network bndcmp_downloader_network --restart unless-stopped bndcmp_downloader_ui
