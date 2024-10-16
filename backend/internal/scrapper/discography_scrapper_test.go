@@ -107,7 +107,7 @@ func (s *TestDiscographyScrapperSuite) TestParse_Error() {
 	s.Nil(node)
 }
 
-func (s *TestDiscographyScrapperSuite) Test_find_Success() {
+func (s *TestDiscographyScrapperSuite) Test_findByDataClientItems_Success() {
 	dataAsBytes := []byte(validDiscographyExample)
 	mockReader := bytes.NewReader(dataAsBytes)
 	nodes, err := html.Parse(mockReader)
@@ -149,7 +149,70 @@ func (s *TestDiscographyScrapperSuite) Test_find_Success() {
 		"/album/willoughbys-beach-ep",
 	}
 
-	err = s.DiscographyScrapper.find(nodes)
+	err = s.DiscographyScrapper.findByDataClientItems(nodes)
+	s.NoError(err)
+	s.Equal(expectedAlbumList, s.DiscographyScrapper.AlbumList)
+}
+
+func (s *TestDiscographyScrapperSuite) Test_findByHref_Success() {
+	dataAsBytes := []byte(validDiscographyExample)
+	mockReader := bytes.NewReader(dataAsBytes)
+	nodes, err := html.Parse(mockReader)
+	s.NoError(err)
+	s.NotNil(nodes)
+
+	expectedAlbumList := []string{
+		"/album/flight-b741",
+		"/album/the-silver-cord",
+		"/album/demos-vol-5-vol-6",
+		"/album/live-in-chicago-23",
+		"/album/petrodragonic-apocalypse-or-dawn-of-eternal-night-an-annihilation-of-planet-earth-and-the-beginning-of-merciless-damnation",
+		"/album/live-at-red-rocks-22",
+		"/album/changes",
+		"/album/laminated-denim",
+		"/album/ice-death-planets-lungs-mushrooms-and-lava",
+		"/album/live-at-bonnaroo-22",
+		"/album/demos-vol-3-vol-4",
+		"/album/omnium-gatherum",
+		"/album/made-in-timeland",
+		"/album/live-in-brisbane-21",
+		"/album/butterfly-3001",
+		"/album/live-at-levitation-14",
+		"/album/live-at-levitation-16",
+		"/album/live-in-milwaukee-19",
+		"/album/butterfly-3000",
+		"/album/live-in-sydney-21",
+		"/album/live-in-melbourne-21",
+		"/album/l-w",
+		"/album/live-in-london-19",
+		"/album/teenage-gizzard",
+		"/album/k-g",
+		"https://kinggizzard.bandcamp.com/album/live-in-san-francisco-16",
+		"/album/live-in-asheville-19",
+		"/album/demos-vol-1-vol-2",
+		"https://kinggizzard.bandcamp.com/album/chunky-shrapnel",
+		"/album/live-in-brussels-19",
+		"/album/live-in-adelaide-19",
+		"/album/live-in-paris-19",
+		"https://kinggizzard.bandcamp.com/album/infest-the-rats-nest-2",
+		"/album/fishing-for-fishies",
+		"/album/gumboot-soup",
+		"/album/polygondwanaland",
+		"/album/sketches-of-brunswick-east",
+		"/album/murder-of-the-universe",
+		"/album/flying-microtonal-banana",
+		"/album/nonagon-infinity-2",
+		"/album/paper-m-ch-dream-balloon",
+		"/album/quarters",
+		"/album/im-in-your-mind-fuzz",
+		"/album/oddments",
+		"/album/float-along-fill-your-lungs",
+		"/album/eyes-like-the-sky",
+		"/album/12-bar-bruise",
+		"/album/willoughbys-beach-ep",
+	}
+
+	err = s.DiscographyScrapper.findByHref(nodes)
 	s.NoError(err)
 	s.Equal(expectedAlbumList, s.DiscographyScrapper.AlbumList)
 }
@@ -160,7 +223,7 @@ func (s *TestDiscographyScrapperSuite) Test_processAlbumList_Success() {
 	nodes, err := html.Parse(mockReader)
 	s.NoError(err)
 	s.NotNil(nodes)
-	err = s.DiscographyScrapper.find(nodes)
+	err = s.DiscographyScrapper.findByDataClientItems(nodes)
 	s.NoError(err)
 
 	expectedDiscographyList := []string{
@@ -177,7 +240,7 @@ func (s *TestDiscographyScrapperSuite) Test_processAlbumList_NoResults() {
 	nodes, err := html.Parse(mockReader)
 	s.NoError(err)
 	s.NotNil(nodes)
-	err = s.DiscographyScrapper.find(nodes)
+	err = s.DiscographyScrapper.findByDataClientItems(nodes)
 	s.NoError(err)
 
 	output := s.DiscographyScrapper.processAlbumList()

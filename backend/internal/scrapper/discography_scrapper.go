@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/url"
 	"regexp"
+	"strings"
 
 	"github.com/josedelrio85/bndcmp_downloader/internal/album_catalog"
 	"github.com/josedelrio85/bndcmp_downloader/internal/bandcamp"
@@ -44,14 +45,21 @@ func (a *DiscographyScrapper) Parse(data io.Reader) (*html.Node, error) {
 }
 
 func (a *DiscographyScrapper) Find(node *html.Node) error {
-	if err := a.find(node); err != nil {
+	if err := a.findByDataClientItems(node); err != nil {
 		return err
 	}
+
+	if len(a.AlbumList) == 0 {
+		if err := a.findByHref(node); err != nil {
+			return err
+		}
+	}
+
 	a.AlbumList = a.processAlbumList()
 	return nil
 }
 
-func (a *DiscographyScrapper) find(node *html.Node) error {
+func (a *DiscographyScrapper) findByDataClientItems(node *html.Node) error {
 	if node.Type == html.ElementNode && node.Data == "ol" {
 		for _, attr := range node.Attr {
 			if attr.Key == "data-client-items" {
@@ -71,7 +79,24 @@ func (a *DiscographyScrapper) find(node *html.Node) error {
 	}
 
 	for c := node.FirstChild; c != nil; c = c.NextSibling {
-		if err := a.find(c); err != nil {
+		if err := a.findByDataClientItems(c); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (a *DiscographyScrapper) findByHref(node *html.Node) error {
+	if node.Type == html.ElementNode && node.Data == "a" {
+		for _, attr := range node.Attr {
+			if attr.Key == "href" && strings.Contains(attr.Val, "album") {
+				a.AlbumList = append(a.AlbumList, attr.Val)
+			}
+		}
+	}
+
+	for c := node.FirstChild; c != nil; c = c.NextSibling {
+		if err := a.findByHref(c); err != nil {
 			return err
 		}
 	}
