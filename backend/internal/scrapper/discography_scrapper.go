@@ -124,6 +124,9 @@ func (a *DiscographyScrapper) Save(data io.Reader, track *model.Track) error {
 
 func (a *DiscographyScrapper) Execute(discographyURL *url.URL) error {
 	log.Printf("Starting discography scrapper for URL: %s", discographyURL.String())
+	if len(a.AlbumList) > 0 {
+		a.AlbumList = []string{}
+	}
 	reader, err := a.Retrieve(discographyURL.String())
 	if err != nil {
 		log.Printf("Error retrieving discography page: %v", err)
