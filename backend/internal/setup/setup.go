@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/joho/godotenv"
 	"github.com/josedelrio85/bndcmp_downloader/internal/album_catalog"
 	"github.com/josedelrio85/bndcmp_downloader/internal/parser"
 	"github.com/josedelrio85/bndcmp_downloader/internal/retriever"
@@ -20,11 +19,10 @@ type Config struct {
 }
 
 func LoadConfig() *Config {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
+	baseFolder := os.Getenv("BASE_FOLDER")
+	if baseFolder == "" {
+		log.Fatal("BASE_FOLDER is not set")
 	}
-	baseFolder := loadBaseFolder()
 
 	albumCatalog := album_catalog.NewInMemoryAlbumCatalog(baseFolder)
 	if err := albumCatalog.Generate(baseFolder); err != nil {
@@ -38,13 +36,4 @@ func LoadConfig() *Config {
 		Saver:        saver.NewLocalSaver(&baseFolder),
 		AlbumCatalog: albumCatalog,
 	}
-}
-
-func loadBaseFolder() string {
-	baseFolder := os.Getenv("BASE_FOLDER")
-	if baseFolder == "" {
-		log.Fatal("BASE_FOLDER is not set")
-	}
-
-	return baseFolder
 }
