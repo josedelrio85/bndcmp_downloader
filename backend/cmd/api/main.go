@@ -44,13 +44,10 @@ func setupRouter(httpHandler *handler.HttpHandler) http.Handler {
 	r := mux.NewRouter()
 	apiV1 := r.PathPrefix("/api/v1").Subrouter()
 	apiV1.HandleFunc("/health", httpHandler.Health).Methods("GET")
-	// apiV1.HandleFunc("/{artist}", httpHandler.GetDiscography).Methods("GET")
-	// apiV1.HandleFunc("/{artist}/{album}", httpHandler.GetAlbum).Methods("GET")
-	// apiV1.HandleFunc("/{artist}/track/{track}", httpHandler.GetTrack).Methods("GET")
 	apiV1.HandleFunc("/scrapp", httpHandler.Scrapp).Methods("GET")
 
 	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://localhost:5173", "http://localhost:8080", "http://192.168.50.84:8080"},
+		AllowedOrigins: []string{"http://localhost:5173", "http://localhost:8080", "http://192.168.50.188:8080"},
 		AllowedMethods: []string{"GET", "POST", "OPTIONS"},
 		AllowedHeaders: []string{"*"},
 	})
