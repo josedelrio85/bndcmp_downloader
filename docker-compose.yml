@@ -8,8 +8,8 @@ services:
     container_name: bndcmp_downloader_ui
     ports:
       - "8080:80"
-    # depends_on:
-    #   - backend
+    depends_on:
+      - backend
 
   backend:
     build:
