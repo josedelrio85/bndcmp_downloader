@@ -90,8 +90,8 @@ func (t *TrackScrapper) Execute(trackURL *url.URL) error {
 		if t.isDownloaded() {
 			return nil
 		}
-		log.Printf("Processing download for track: %s", t.Track.Title)
 		if t.Track.DownloadURL != "" {
+			log.Printf("Processing download for track: %s", t.Track.Title)
 			mp3_reader, err := t.Retrieve(t.Track.DownloadURL)
 			if err != nil {
 				log.Printf("Error retrieving MP3 from URL %s: %v", t.Track.DownloadURL, err)

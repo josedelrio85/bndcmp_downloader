@@ -1,12 +1,11 @@
 <script setup>
   import { ref, computed } from 'vue'
-    // import HelloWorld from './components/HelloWorld.vue'
   const url = ref('')
   const response = ref('')
   const isLoading = ref(false)
 
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://bndcmp_downloader_api:8099"
-  // const apiBaseUrl = "http://192.168.50.84:8099"
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  console.log("apiBaseUrl: " + apiBaseUrl)
 
   const submitRequest = async () => {
     const apiUrl = `${apiBaseUrl}/api/v1/scrapp?url=${encodeURIComponent(url.value)}`
