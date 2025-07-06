@@ -21,13 +21,13 @@ services:
     env_file:
       - ./backend/.env
     volumes:
-      - bndcmp_downloader_volume:/app/downloads
+      - /home/jose/Descargas/bndcmp_downloader:/app/downloads
 
-volumes:
-  bndcmp_downloader_volume:
-    driver: local
-    driver_opts:
-      type: none
-      device: /home/jose/Descargas/bndcmp_downloader
-      o: bind
+# volumes:
+#   bndcmp_downloader_volume:
+#     driver: local
+#     driver_opts:
+#       type: none
+#       device: /home/jose/Descargas/bndcmp_downloader
+#       o: bind
 
